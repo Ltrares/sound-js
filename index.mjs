@@ -20,7 +20,7 @@ $(document).ready(function () {
     window.audioContext = new AudioContext();
 
     soundDemo = new SoundDemo("./sound.config");
-    window.requestAnimationFrame(step.bind(this));
+    window.requestAnimationFrame(step);
     P5 = new p5(drawing);
 });
 
@@ -34,7 +34,7 @@ function step(timestamp) {
 
     soundDemo.update(timestamp, dt);
     updateConsole(dt);
-    window.requestAnimationFrame(step.bind(this));
+    window.requestAnimationFrame(step);
 
 }
 

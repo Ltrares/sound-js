@@ -1,3 +1,5 @@
+import Notes from "./notes.mjs";
+
 export default class SoundNode {
     constructor(type, name ) {
         this.name = name;
@@ -26,8 +28,9 @@ export default class SoundNode {
                 this.output[i].push(0);
             }
         }
-        window.addMessage(this.describe(), 5.0);
+        //window.addMessage(this.describe(), 5.0);
         SoundNode.context = {};
+        SoundNode.notes = new Notes();
     }
 
     setOutput(i, j, v) {
@@ -66,12 +69,13 @@ export default class SoundNode {
         this.updateEffectiveRate();
         this.updateEffectiveVolume();
         this.updateEffectivePitch();
-        console.log(this.describe() + " parent set", this);
+        //console.log(this.describe() + " parent set", this);
     }
 
     play(delay) {
-        window.addMessage("playing " + this.describe(), 5.0);
-        console.log("starting " + this.describe(), this);
+
+        //window.addMessage("playing " + this.describe(), 5.0);
+        //console.log("starting " + this.describe(), this);
         this.paused = false;
         this.delay = delay;
 
@@ -263,7 +267,7 @@ export default class SoundNode {
             child.stop();
         });
         //this.node.disconnect();
-        window.addMessage(this.describe() + " is done", 5);
+        //window.addMessage(this.describe() + " is done", 5);
     } //
 
 

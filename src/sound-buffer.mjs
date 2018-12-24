@@ -46,29 +46,23 @@ export default class SoundBuffer {
                 overall[i] += mag;
             } //for var i - total
 
-            var freqSort = $.map(cmags, (value, index) => {
-                return {value, frequency: index * this.binSize};
-            }).filter((a) => {
-                return a ? (a.value > 0 && a.frequency > 0) : null;
-            }).sort((a, b) => {
-                return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
-            }).filter((a, i) => {
-                return (i < 10) ? a : null;
-            });
+            var freqSort = this.topValues(cmags,10);
+
+            // var freqSort = $.map(cmags, (value, index) => {
+            //     return {value, frequency: index * this.binSize};
+            // }).filter((a) => {
+            //     return a ? (a.value > 0 && a.frequency > 0) : null;
+            // }).sort((a, b) => {
+            //     return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+            // }).filter((a, i) => {
+            //     return (i < 10) ? a : null;
+            // });
 
             this.frequencies.push( freqSort );
 
         } //while
 
-        var freqSort = $.map(overall, (value, index) => {
-            return {value, frequency: index * this.binSize};
-        }).filter((a) => {
-            return a ? (a.value > 0 && a.frequency > 0) : null;
-        }).sort((a, b) => {
-            return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
-        }).filter((a, i) => {
-            return (i < 10) ? a : null;
-        });
+        var freqSort = this.topValues(overall,10);
 
         //console.log("frequency map", freqSort);
         this.overallFrequencies = freqSort;
@@ -77,4 +71,15 @@ export default class SoundBuffer {
         this.ready = true;
     };
 
+    topValues(data,count) {
+        return $.map(data, (value, index) => {
+            return {value, frequency: index * this.binSize};
+        }).filter((a) => {
+            return a ? (a.value > 0 && a.frequency > 0) : null;
+        }).sort((a, b) => {
+            return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+        }).filter((a, i) => {
+            return (i < 10) ? a : null;
+        });
+    }
 };

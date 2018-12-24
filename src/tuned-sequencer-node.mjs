@@ -1,15 +1,17 @@
 import SoundNode from "./sound-node.mjs";
-import SampleNode from "./sample-node.mjs";
+import GrainNode from "./grain-node.mjs";
 
-export default class SequencerNode extends SoundNode {
+export default class TunedSequencerNode extends SoundNode {
 
     constructor( name ) {
-        super( "Sequencer Node", name );
+        super( "Tuned Sequencer Node", name );
         this.beatTime = 60/120;
         this.tracks = {};
         this.loop = true;
         this.sequenceLength = 4;
         this.beat = 0;
+        this.stepSize = Math.pow( 2, 1/12 );
+        this.inverseStepSize = 1/this.stepSize;
     }
 
     setBpm(bpm) {
@@ -53,23 +55,35 @@ export default class SequencerNode extends SoundNode {
     }
 
     checkTracks(beatStart, beatEnd, extraDelay) {
+        if ( beatStart > beatEnd ) {
+            var tmp = beatStart;
+            beatStart = beatEnd;
+            beatEnd = tmp;
+        } //if
 
         this.tracks.forEach( track =>{
-            if ( beatStart > beatEnd ) {
-                var tmp = beatStart;
-                beatStart = beatEnd;
-                beatEnd = tmp;
-            } //if
-            track.beats.forEach( beat =>{
-
-                if ( beat >= beatStart && beat < beatEnd ) {
-                    //console.log( "start " + track.sound + " at " + beat, beatStart, beatEnd );
-                    var sample = new SampleNode( track.soundBuffer.buffer, track.name ? track.name : track.sound );
-                    var delay = (beat-beatStart)*this.beatTime;
+            track.beats.forEach( beatInfo =>{
+                if ( beatInfo.beat >= beatStart && beatInfo.beat < beatEnd ) {
+                    console.log( "tuned track start " + track.sound + " at " + beatInfo.beat, beatStart, beatEnd );
+                    var sample = new GrainNode( track.soundBuffer.buffer, track.name ? track.name : track.sound );
+                    var delay = (beatInfo.beat-beatStart)*this.beatTime;
+                    sample.setPitch( beatInfo.pitch ? this.calcPitch(track,beatInfo.pitch) : 1.0 );
+                    sample.setRate( beatInfo.rate ? beatInfo.rate : 1.0 );
+                    sample.setVolume( beatInfo.volume ? beatInfo.volume : 1.0 )
                     this.addChild(sample,extraDelay+delay);
-                } //
+                }
             });
         });
+
+    }
+
+    calcPitch(track,pitch) {
+        if ( typeof(pitch) === "number" )  return pitch;
+
+        var base = track.soundBuffer.primaryFrequency;
+        var target = SoundNode.notes(pitch);
+
+        return target/base;
 
     }
 }

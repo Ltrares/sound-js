@@ -2,7 +2,9 @@ import SoundNode from "./sound-node.mjs";
 import SoundBuffer from "./sound-buffer.mjs";
 import GrainNode from "./grain-node.mjs";
 import SequencerNode from "./sequencer-node.mjs";
+import TunedSequencerNode from "./tuned-sequencer-node.mjs";
 import WebkitPlayer from "./webkit-player.mjs";
+import DarkBell from "./dark-bell.mjs";
 import OutputBuffer from "./output-buffer.mjs";
 //import * as SoundConstants from "./sound-constants.mjs";
 
@@ -16,7 +18,8 @@ export default class SoundDemo extends SoundNode {
         this.soundBuffers = {};
         this.ready = false;
         this.rhythm =  { beatsPerMinute: 120, beatsPerMeasure: 4 };
-        this.audioRenderer = new WebkitPlayer(window.audioContext);
+        this.audioRenderer = new WebkitPlayer(window.audioContext,this);
+        this.currentOutput = [];
     };
 
     configLoaded(data) {
@@ -52,6 +55,10 @@ export default class SoundDemo extends SoundNode {
             case "sequencer":
                 node = this.createSequencerNode( config, name );
                 console.log( "new sequencer node" );
+                break;
+            case "tuned-sequencer":
+                node = this.createTunedSequencerNode(config, name);
+                console.log( "new tuned sequencer node" );
                 break;
 
         } //switch
@@ -115,26 +122,28 @@ export default class SoundDemo extends SoundNode {
 
     play() {
         this.setUpDemo();
-        var b3 = new GrainNode(this.soundBuffers["s4"].buffer, "kick" );
-        b3.rate = 1;
-        b3.pitch = 1;
-        b3.grainInterval = 150;
-        b3.grainSize = 300;
+        // var b3 = new GrainNode(this.soundBuffers["s4"].buffer, "kick" );
+        // b3.rate = 1;
+        // b3.pitch = 1;
+        // b3.grainInterval = 150;
+        // b3.grainSize = 300;
 
-        this.addChild(b3);
-        //this.setRate(0.5);
+       //this.addChild(b3);
+        //this.setRate(1);
 
-        this.audioRenderer.start();
-        super.play(0);
+       // var db = new DarkBell("dark it up",32,145);
+        //db.setVolume(0.1);
+        //this.addChild(db);
+
+        //this.audioRenderer.start();
+        super.play(5);
+        this.audioRenderer.pumpAudio();
     }
 
     update(timeStamp,delta) {
-        if (!this.checkLoading()) return;
-
-        //if ( this.paused ) return;
-
-        this.audioRenderer.render(this);
-
+        var brc = this.checkLoading();
+        if (!brc) return;
+        //this.audioRenderer.render(this);
     };
 
     createSequencerNode(config, name) {
@@ -142,12 +151,28 @@ export default class SoundDemo extends SoundNode {
         node.setBpm(this.rhythm.beatsPerMinute);
         node.setSequenceLength( config.lengthInBeats );
         node.setLoop(config.loop);
+        if ( config.pitch ) node.setPitch(config.pitch);
         config.tracks.forEach( track =>{
             track.soundBuffer = this.soundBuffers[ track.sound ];
         });
         node.setTracks( config.tracks );
         return node;
     }
+
+    createTunedSequencerNode(config, name) {
+        var node = new TunedSequencerNode(name);
+        node.setBpm(this.rhythm.beatsPerMinute);
+        node.setSequenceLength( config.lengthInBeats );
+        node.setLoop(config.loop);
+        if ( config.pitch ) node.setPitch(config.pitch);
+        if ( config.rate ) node.setRate(config.rate);
+        config.tracks.forEach( track =>{
+            track.soundBuffer = this.soundBuffers[ track.sound ];
+        });
+        node.setTracks( config.tracks );
+        return node;
+    }
+
 };
 
 
