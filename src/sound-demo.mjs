@@ -99,17 +99,7 @@ export default class SoundDemo extends SoundNode {
                 console.log("audio loaded", values);
                 return this.config;
             });
-        //
-        // $.each(sounds, (name, file) => {
-        //     var audioRequest = new XMLHttpRequest();
-        //     var url = "./sounds/" + file;
-        //     audioRequest.open("GET", encodeURIComponent(url), true);
-        //     audioRequest.responseType = "arraybuffer";
-        //     audioRequest.onload = (event) => {
-        //         callback(name, url, audioRequest.response);
-        //     };
-        //     audioRequest.send();
-        // });
+
     };
 
     async fetchAudio(name, file) {
@@ -142,21 +132,6 @@ export default class SoundDemo extends SoundNode {
     };
 
     play() {
-
-        // var b3 = new GrainNode(this.soundBuffers["s4"].buffer, "kick" );
-        // b3.rate = 1;
-        // b3.pitch = 1;
-        // b3.grainInterval = 150;
-        // b3.grainSize = 300;
-
-        //this.addChild(b3);
-        //this.setRate(1);
-
-        // var db = new DarkBell("dark it up",32,145);
-        //db.setVolume(0.1);
-        //this.addChild(db);
-
-        //this.audioRenderer.start();
         super.play(5);
         this.audioRenderer.pumpAudio();
     }
@@ -172,6 +147,7 @@ export default class SoundDemo extends SoundNode {
         node.setBpm(this.rhythm.beatsPerMinute);
         node.setSequenceLength(config.lengthInBeats);
         node.setLoop(config.loop);
+        node.setVolume(config.volume ? config.volume : 1.0);
         if (config.pitch) node.setPitch(config.pitch);
         config.tracks.forEach(track => {
             track.soundBuffer = this.soundBuffers[track.sound];
@@ -185,6 +161,7 @@ export default class SoundDemo extends SoundNode {
         node.setBpm(this.rhythm.beatsPerMinute);
         node.setSequenceLength(config.lengthInBeats);
         node.setLoop(config.loop);
+        node.setVolume(config.volume ? config.volume : 1.0);
         if (config.pitch) node.setPitch(config.pitch);
         if (config.rate) node.setRate(config.rate);
         config.tracks.forEach(track => {

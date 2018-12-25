@@ -2,7 +2,7 @@ import OutputBuffer from "./output-buffer.mjs";
 
 export default class WebkitPlayer {
 
-    constructor(context,soundNode) {
+    constructor(context, soundNode) {
         this.bufferSize = 2048;
         this.channelCount = 2;
         //this.node = context.createScriptProcessor(this.bufferSize, this.channelCount, this.channelCount);
@@ -26,14 +26,13 @@ export default class WebkitPlayer {
 
         var bufferTime = this.bufferSize / this.context.sampleRate;
 
-        if ( this.playTime - this.context.currentTime > 5*bufferTime ) return;
+        if (this.playTime - this.context.currentTime > 5 * bufferTime) return;
 
-        while ( this.playTime - this.context.currentTime < 10*bufferTime ) {
+        while (this.playTime - this.context.currentTime < 10 * bufferTime) {
             //console.log("pump audio", this.playTime, this.context.currentTime );
             var outputBuffer = this.outputBuffers.shift();
             //console.log( outputBuffer );
             const buffer = this.context.createBuffer(this.channelCount, this.bufferSize, this.context.sampleRate);
-            console.log( this.channelCount );
             for (var channel = 0; channel < this.channelCount; channel++) {
                 const samples = buffer.getChannelData(channel);
 
@@ -42,9 +41,9 @@ export default class WebkitPlayer {
                 for (var i = 0; i < this.bufferSize; i++) {
 
 
-                   //if (outputBuffer) samples[i] = 1.3 * Math.cos(770 * (this.playTime + i * dt)); //Math.random()-0.5; //Math.sin(440.0*cct); // + channel*0.1);
-                   //if (!outputBuffer) samples[i] = 1.1 * Math.cos(440 * (this.playTime + i * dt)); //Math.random()-0.5; //Math.sin(440.0*cct); // + channel*0.1);
-                   if ( outputBuffer ) samples[i] =  Math.tanh(0.25*outputBuffer.get(channel,i));
+                    //if (outputBuffer) samples[i] = 1.3 * Math.cos(770 * (this.playTime + i * dt)); //Math.random()-0.5; //Math.sin(440.0*cct); // + channel*0.1);
+                    //if (!outputBuffer) samples[i] = 1.1 * Math.cos(440 * (this.playTime + i * dt)); //Math.random()-0.5; //Math.sin(440.0*cct); // + channel*0.1);
+                    if (outputBuffer) samples[i] = Math.tanh(outputBuffer.get(channel, i));
                     //cct += 1/this.context.sampleRate;
                 } //sample
             } //channels
@@ -54,7 +53,7 @@ export default class WebkitPlayer {
             bsn.connect(this.context.destination);
             // When a buffer is done playing, try to queue up
             // some more audio.
-            bsn.onended = function(it) {
+            bsn.onended = function (it) {
                 it.currentTarget.disconnect();
                 this.pumpAudio();
             }.bind(this);
@@ -62,10 +61,10 @@ export default class WebkitPlayer {
             bsn.start(this.playTime);
             this.playTime += bufferTime;
 
-            if ( outputBuffer ) this.freeOutputBuffers.push(outputBuffer.clear());
-            outputBuffer = this.getOutputBuffer(this.bufferSize,this.channelCount);
+            if (outputBuffer) this.freeOutputBuffers.push(outputBuffer.clear());
+            outputBuffer = this.getOutputBuffer(this.bufferSize, this.channelCount);
             this.soundNode.updateAudio(outputBuffer);
-            if ( outputBuffer ) this.outputBuffers.push(outputBuffer);
+            if (outputBuffer) this.outputBuffers.push(outputBuffer);
 
         } //while
 
@@ -172,8 +171,8 @@ export default class WebkitPlayer {
     //
     // }
 
-    getOutputBuffer(bufferSize,channelCount) {
-        if ( this.freeOutputBuffers.length <= 0 ) return new OutputBuffer(this.bufferSize, this.channelCount);
+    getOutputBuffer(bufferSize, channelCount) {
+        if (this.freeOutputBuffers.length <= 0) return new OutputBuffer(this.bufferSize, this.channelCount);
 
         return this.freeOutputBuffers.shift();
     }
