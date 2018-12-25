@@ -12,6 +12,8 @@ export default class WebkitPlayer {
         this.freeOutputBuffers = [];
         this.playTime = context.currentTime;
         this.soundNode = soundNode;
+        this.currentOutput = null;
+        this.pendingOutput = [];
     }
 
     start() {
@@ -31,6 +33,7 @@ export default class WebkitPlayer {
         while (this.playTime - this.context.currentTime < 10 * bufferTime) {
             //console.log("pump audio", this.playTime, this.context.currentTime );
             var outputBuffer = this.outputBuffers.shift();
+            this.pendingOutput.push(outputBuffer);
             //console.log( outputBuffer );
             const buffer = this.context.createBuffer(this.channelCount, this.bufferSize, this.context.sampleRate);
             for (var channel = 0; channel < this.channelCount; channel++) {
@@ -54,6 +57,10 @@ export default class WebkitPlayer {
             // When a buffer is done playing, try to queue up
             // some more audio.
             bsn.onended = function (it) {
+                if ( this.currentOutput != null ) {
+                    this.freeOutputBuffers.push(this.currentOutput.clear());
+                }
+                this.currentOutput = this.pendingOutput.shift();
                 it.currentTarget.disconnect();
                 this.pumpAudio();
             }.bind(this);
@@ -61,7 +68,7 @@ export default class WebkitPlayer {
             bsn.start(this.playTime);
             this.playTime += bufferTime;
 
-            if (outputBuffer) this.freeOutputBuffers.push(outputBuffer.clear());
+            //if (outputBuffer) this.freeOutputBuffers.push(outputBuffer.clear());
             outputBuffer = this.getOutputBuffer(this.bufferSize, this.channelCount);
             this.soundNode.updateAudio(outputBuffer);
             if (outputBuffer) this.outputBuffers.push(outputBuffer);

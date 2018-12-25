@@ -38,8 +38,8 @@ function step(timestamp) {
     var dt = (timestamp - lastTimestamp) / 1000.0;
     lastTimestamp = timestamp;
 
-    soundDemo.update(timestamp, dt);
-    updateConsole(dt);
+    //soundDemo.update(timestamp, dt);
+    //updateConsole(dt);
     window.requestAnimationFrame(step);
 
 }
@@ -83,7 +83,7 @@ let drawing = function (sketch) {
             g.text("loading", mx, my);
         }
 
-        drawConsole(g);
+        //drawConsole(g);
 
     };
 
@@ -100,12 +100,11 @@ let drawing = function (sketch) {
 };
 
 function drawSound(g) {
-    if (!soundDemo.ready || !soundDemo.output) return;
-    var cmax = soundDemo.output.length;
+    if ( !soundDemo.ready ) return;
 
-    if (cmax <= 0) return;
+    var channelCount = soundDemo.getOutputChannelCount();
 
-    var angle = 2 * Math.PI / cmax;
+    var angle = 2 * Math.PI / channelCount;
     var offset = 0; //lastTimestamp*0.0001;
     //g.fill(g.color(204, 153, 0));
     g.stroke(g.color(0, 153, 204));
@@ -113,14 +112,19 @@ function drawSound(g) {
     var w2 = g.windowWidth / 2;
     var h2 = g.windowHeight / 2;
 
-    var dAng = angle/soundDemo.bufferSize;
+    var dAng = angle/soundDemo.getOutputBufferSize();
 
-    for (var ci = 0; ci < cmax; ci++) {
+    var outputBuffer = soundDemo.getCurrentOutput();
+
+    for (var ci = 0; ci < channelCount; ci++) {
         g.stroke(g.color((ci*128)%255, (153-ci*64)%255, (204-ci*32)%255));
         //var values = soundDemo.output[ci];
-        for (var i = 0; i < soundDemo.bufferSize; i+=1) {
+        for (var i = 0; i < soundDemo.getOutputBufferSize(); i+=4) {
             var myAngle = offset + ci *(dAng + angle) + 2*i * dAng;
-            var v = soundDemo.output[ci][i];
+
+
+            var v = outputBuffer ? outputBuffer.get(ci,i) : 0.0;
+            //var v = soundDemo.output[ci][i];
             v *= 100;
             v += 200;
             if ( i%4 == 0 ) {

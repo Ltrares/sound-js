@@ -15,8 +15,19 @@ export default class SoundDemo extends SoundNode {
         this.ready = false;
         this.rhythm = {beatsPerMinute: 120, beatsPerMeasure: 4};
         this.audioRenderer = new WebkitPlayer(window.audioContext, this);
-        this.currentOutput = [];
     };
+
+    getCurrentOutput() {
+        return this.audioRenderer.currentOutput;
+    }
+
+    getOutputBufferSize() {
+        return this.audioRenderer.bufferSize;
+    }
+
+    getOutputChannelCount() {
+        return this.audioRenderer.channelCount;
+    }
 
     isReady() {
         return this.ready;
