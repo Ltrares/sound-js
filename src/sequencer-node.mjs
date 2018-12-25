@@ -1,5 +1,6 @@
 import SoundNode from "./sound-node.mjs";
 import SampleNode from "./sample-node.mjs";
+import GrainNode from "./grain-node.mjs";
 
 export default class SequencerNode extends SoundNode {
 
@@ -10,6 +11,7 @@ export default class SequencerNode extends SoundNode {
         this.loop = true;
         this.sequenceLength = 4;
         this.beat = 0;
+        this.freeNodes = {};
     }
 
     setBpm(bpm) {
@@ -64,7 +66,7 @@ export default class SequencerNode extends SoundNode {
 
                 if ( beat >= beatStart && beat < beatEnd ) {
                     //console.log( "start " + track.sound + " at " + beat, beatStart, beatEnd );
-                    var sample = new SampleNode( track.soundBuffer.buffer, track.name ? track.name : track.sound );
+                    var sample = this.getNode(track); //new SampleNode( track.soundBuffer.buffer, track.name ? track.name : track.sound );
                     var delay = (beat-beatStart)*this.beatTime;
                     this.addChild(sample,extraDelay+delay);
                 } //
@@ -72,4 +74,31 @@ export default class SequencerNode extends SoundNode {
         });
 
     }
+
+    checkForFinishedChildren() {
+        this.children = this.children.filter(child => {
+            if (child.isDone()) {
+                child.stop();
+                if ( this.freeNodes[child.name] === undefined ) {
+                    this.freeNodes[ child.name ] = [];
+                }
+                this.freeNodes[ child.name ].push( child );
+                return false;
+            }
+            return true;
+        });
+    }
+
+    getNode( track ) {
+        var name = track.name ? track.name : track.sound;
+        var nodes = this.freeNodes[name];
+        var result = nodes ? nodes.shift() : null;
+        if ( result ) {
+            console.log( "recycling sample node", name );
+            result.reset();
+            return result;
+        }
+        return new SampleNode( track.soundBuffer.buffer, name );
+    }
+
 }

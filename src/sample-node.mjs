@@ -7,13 +7,19 @@ export default class SampleNode extends SoundNode {
         super("Sample Node", name);
         this.audioBuffer = audioBuffer;
         this.position = 0;
+        this.reset();
+    }
+
+    reset() {
+        if (this.effectiveRate < 0) {
+            this.position = this.audioBuffer.length * this.timePerSample;
+        } else {
+            this.position = 0;
+        }
+        this.done = false;
     }
 
     play(delay) {
-        if (this.effectiveRate < 0) {
-            this.position = this.audioBuffer.length * this.timePerSample;
-            console.log("position", this.position);
-        }
         super.play(delay);
     }
 

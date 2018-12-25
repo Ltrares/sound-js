@@ -10,23 +10,33 @@ export default class GrainNode extends SoundNode {
         console.log("new grain node", this, audioBuffer);
         this.audioBuffer = audioBuffer;
         this.length = audioBuffer.length;
-        this.grainInterval = 50;
-        this.grainSize = 100;
+        this.grainInterval = 150;
+        this.grainSize = 300;
         this.randomness = 0.001;
-        this.position = 0.0;
         this.msPerSample = 1000.0 / audioContext.sampleRate;
         this.grains = [];
         this.freeGrains = [];
         this.position = 0.0;
         this.timeSinceLastGrain = 0.0;
+        //this.starting = true;
+        this.reset();
+    }
+
+    reset() {
+        if ( this.effectiveRate < 0 ) {
+            this.position = this.audioBuffer.length * this.msPerSample;
+        } else {
+            this.position = 0;
+        }
         this.starting = true;
+        this.timeSinceLastGrain = 0;
+        this.done = false;
+        this.grains.forEach( value=>this.freeGrains.push(value));
+        this.grains = [];
     }
 
 
     play(delay) {
-        if (this.effectiveRate < 0) {
-            this.position = this.audioBuffer.length * this.msPerSample;
-        } //
         super.play(delay);
     }
 

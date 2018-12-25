@@ -14,6 +14,7 @@ export default class TunedSequencerNode extends SoundNode {
         this.stepSize = Math.pow( 2, 1/12 );
         this.inverseStepSize = 1/this.stepSize;
         this.notes = new Notes();
+        this.freeNodes = {};
     }
 
     setBpm(bpm) {
@@ -67,7 +68,7 @@ export default class TunedSequencerNode extends SoundNode {
             track.beats.forEach( beatInfo =>{
                 if ( beatInfo.beat >= beatStart && beatInfo.beat < beatEnd ) {
                     console.log( "tuned track start " + track.sound + " at " + beatInfo.beat, beatStart, beatEnd );
-                    var sample = new GrainNode( track.soundBuffer.buffer, track.name ? track.name : track.sound );
+                    var sample = this.getGrainNode( track );
                     var delay = (beatInfo.beat-beatStart)*this.beatTime;
                     sample.setPitch( beatInfo.pitch ? this.calcPitch(track,beatInfo.pitch) : 1.0 );
                     sample.setRate( beatInfo.rate ? beatInfo.rate : 1.0 );
@@ -77,6 +78,31 @@ export default class TunedSequencerNode extends SoundNode {
             });
         });
 
+    }
+    checkForFinishedChildren() {
+        this.children = this.children.filter(child => {
+            if (child.isDone()) {
+                child.stop();
+                if ( this.freeNodes[child.name] === undefined ) {
+                    this.freeNodes[ child.name ] = [];
+                }
+                this.freeNodes[ child.name ].push( child );
+                return false;
+            }
+            return true;
+        });
+    }
+
+    getGrainNode( track ) {
+        var name = track.name ? track.name : track.sound;
+        var nodes = this.freeNodes[name];
+        var result = nodes ? nodes.shift() : null;
+        if ( result ) {
+            console.log( "recycling grain node", name );
+            result.reset();
+            return result;
+        }
+        return new GrainNode( track.soundBuffer.buffer, name );
     }
 
     calcPitch(track,pitch) {
