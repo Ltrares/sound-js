@@ -2,73 +2,73 @@ import SoundFft from "./sound-fft.mjs";
 import * as SoundConstants from "./sound-constants.mjs";
 
 export default class SoundBuffer {
-    constructor(context, url, buffer) {
+    constructor(name, url) {
+        this.name = name;
         this.url = url;
-        this.buffer = null;
+        this.buffer = null; //buffer;
         this.primaryFrequency = null;
         this.frequencies = [];
         this.overallFrequencies = null;
         this.ready = false;
         this.binSize = 0;
-        //this.frequencyArray = null;
-        console.log("sound buffer", url);
-        context.decodeAudioData(buffer, this.audioDecoded.bind(this));
     };
 
-    audioDecoded(buffer) {
-
+    async analyzeAudio(buffer) {
         this.buffer = buffer;
         this.binSize = this.buffer.sampleRate / SoundConstants.FFT_SIZE;
         console.log("decoded audio", buffer);
+        var promise = new Promise(resolve=>{
+            var fft = new SoundFft();
+            var cp = 0;
+            var dataReal = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+            var dataImag = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+            var overall = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+            var channelData = this.buffer.getChannelData(0);
+            while (cp < (this.buffer.length-SoundConstants.FFT_SIZE)) {
+                for (var i = 0; i < SoundConstants.FFT_SIZE; i++) {
+                    var cv = i + cp < this.buffer.length ? channelData[i + cp] : 0;
+                    dataReal[i] = cv;
+                    dataImag[i] = 0;
+                } //
+                fft.transform(dataReal, dataImag);
+                cp += SoundConstants.FFT_STEP_SIZE;
 
+                var cmags = [];
+                for (var i = 0; i < SoundConstants.FFT_SIZE / 2; i++) {
+                    var mag = isNaN(dataReal[i]) ? 0.0 : dataReal[i] * dataReal[i];
+                    mag += isNaN(dataImag[i]) ? 0.0 : dataImag[i] * dataImag[i];
+                    mag = Math.sqrt(mag);
+                    cmags[i] = mag;
+                    overall[i] += mag;
+                } //for var i - total
 
-        var fft = new SoundFft();
-        var cp = 0;
-        var dataReal = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
-        var dataImag = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
-        var overall = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
-        var channelData = this.buffer.getChannelData(0);
-        while (cp < (this.buffer.length-SoundConstants.FFT_SIZE)) {
-            for (var i = 0; i < SoundConstants.FFT_SIZE; i++) {
-                var cv = i + cp < this.buffer.length ? channelData[i + cp] : 0;
-                dataReal[i] = cv;
-                dataImag[i] = 0;
-            } //
-            fft.transform(dataReal, dataImag);
-            cp += SoundConstants.FFT_STEP_SIZE;
+                var freqSort = this.topValues(cmags,10);
 
-            var cmags = [];
-            for (var i = 0; i < SoundConstants.FFT_SIZE / 2; i++) {
-                var mag = isNaN(dataReal[i]) ? 0.0 : dataReal[i] * dataReal[i];
-                mag += isNaN(dataImag[i]) ? 0.0 : dataImag[i] * dataImag[i];
-                mag = Math.sqrt(mag);
-                cmags[i] = mag;
-                overall[i] += mag;
-            } //for var i - total
+                // var freqSort = $.map(cmags, (value, index) => {
+                //     return {value, frequency: index * this.binSize};
+                // }).filter((a) => {
+                //     return a ? (a.value > 0 && a.frequency > 0) : null;
+                // }).sort((a, b) => {
+                //     return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
+                // }).filter((a, i) => {
+                //     return (i < 10) ? a : null;
+                // });
 
-            var freqSort = this.topValues(cmags,10);
+                this.frequencies.push( freqSort );
 
-            // var freqSort = $.map(cmags, (value, index) => {
-            //     return {value, frequency: index * this.binSize};
-            // }).filter((a) => {
-            //     return a ? (a.value > 0 && a.frequency > 0) : null;
-            // }).sort((a, b) => {
-            //     return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
-            // }).filter((a, i) => {
-            //     return (i < 10) ? a : null;
-            // });
+            } //while
 
-            this.frequencies.push( freqSort );
+            var freqSort = this.topValues(overall,10);
 
-        } //while
+            //console.log("frequency map", freqSort);
+            this.overallFrequencies = freqSort;
+            this.primaryFrequency = freqSort[0].frequency;
+            console.log("analyzed", this.name, this.url, this.primaryFrequency, freqSort );
+            this.ready = true;
 
-        var freqSort = this.topValues(overall,10);
-
-        //console.log("frequency map", freqSort);
-        this.overallFrequencies = freqSort;
-        this.primaryFrequency = freqSort[0].frequency;
-        //console.log("analyzed " + this.url, this.primaryFrequency, this.frequencies );
-        this.ready = true;
+            resolve(this);
+        });
+        return promise;
     };
 
     topValues(data,count) {

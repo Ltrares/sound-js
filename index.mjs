@@ -10,6 +10,7 @@ let imagesIndex = 0;
 let font;
 let lastTimestamp = 0;
 let messages = [];
+let demoLoaded = false;
 
 window.addMessage = (msg,duration,color)=>{
     messages.push({age: duration, text: msg})
@@ -20,8 +21,13 @@ $(document).ready(function () {
     window.audioContext = new AudioContext();
 
     soundDemo = new SoundDemo("./sound.config");
+    soundDemo.startLoading()
+        .then(()=>window.demoLoaded=true);
+
     window.requestAnimationFrame(step);
     P5 = new p5(drawing);
+
+
 });
 
 function step(timestamp) {
@@ -70,7 +76,8 @@ let drawing = function (sketch) {
         g.fill(192);
         g.textSize(128);
         g.textAlign(g.CENTER, g.CENTER);
-        if (soundDemo.checkLoading()) {
+        //if (soundDemo.checkLoading()) {
+        if ( soundDemo.isReady() ) {
             g.text("ready", mx, my);
         } else {
             g.text("loading", mx, my);

@@ -1,5 +1,6 @@
 import SoundNode from "./sound-node.mjs";
 import GrainNode from "./grain-node.mjs";
+import Notes from "./notes.mjs";
 
 export default class TunedSequencerNode extends SoundNode {
 
@@ -12,6 +13,7 @@ export default class TunedSequencerNode extends SoundNode {
         this.beat = 0;
         this.stepSize = Math.pow( 2, 1/12 );
         this.inverseStepSize = 1/this.stepSize;
+        this.notes = new Notes();
     }
 
     setBpm(bpm) {
@@ -81,7 +83,7 @@ export default class TunedSequencerNode extends SoundNode {
         if ( typeof(pitch) === "number" )  return pitch;
 
         var base = track.soundBuffer.primaryFrequency;
-        var target = SoundNode.notes(pitch);
+        var target = this.notes.get(pitch);
 
         return target/base;
 

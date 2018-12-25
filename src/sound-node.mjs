@@ -29,8 +29,7 @@ export default class SoundNode {
             }
         }
         //window.addMessage(this.describe(), 5.0);
-        SoundNode.context = {};
-        SoundNode.notes = new Notes();
+
     }
 
     setOutput(i, j, v) {

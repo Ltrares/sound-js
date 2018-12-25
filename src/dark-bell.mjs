@@ -1,12 +1,12 @@
 import SoundNode from "./sound-node.mjs";
-import Grain from "./grain.mjs";
+import SeedRand from "./seed-rand.mjs";
 
 export default class DarkBell extends SoundNode {
     constructor(name,depth,seed) {
         super("DarkBell",name);
         this.depth = depth ? depth : 11;
         this.currentPos = 0;
-        var rand = this.sfc32( seed, ~seed, (seed+1)/2, ~((seed+1)/2) );
+        var rand = new SeedRand(seed); //
         this.parameters = [];
 
         for ( var i = 0; i < 5; i++) {
@@ -71,27 +71,5 @@ export default class DarkBell extends SoundNode {
 
     } //
 
-    sfc32(a, b, c, d) {
-        return function() {
-            a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
-            var t = (a + b) | 0;
-            a = b ^ b >>> 9;
-            b = c + (c << 3) | 0;
-            c = (c << 21 | c >>> 11);
-            d = d + 1 | 0;
-            t = t + d | 0;
-            c = c + t | 0;
-            return (t >>> 0) / 4294967296;
-        }
-    }
-    // //https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
-    // xoshiro128ss(a, b, c, d) {
-    //     return function() {
-    //         var t = b << 9, r = a * 5; r = (r << 7 | r >>> 25) * 9;
-    //         c ^= a; d ^= b;
-    //         b ^= c; a ^= d; c ^= t;
-    //         d = d << 11 | d >>> 21;
-    //         return (r >>> 0) / 4294967296;
-    //     }
-    // }
+
 }

@@ -18,6 +18,10 @@ export default class WebkitPlayer {
         this.pumpAudio();
     }
 
+    async decodeAudio(buffer) {
+        return this.context.decodeAudioData(buffer);
+    }
+
     pumpAudio() {
 
         var bufferTime = this.bufferSize / this.context.sampleRate;
