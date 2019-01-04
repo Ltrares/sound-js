@@ -31,6 +31,11 @@ export default class TunedSequencerNode extends SoundNode {
 
     setTracks(tracks) {
         this.tracks = tracks;
+        this.resetTrackBeatIndex();
+    }
+
+    resetTrackBeatIndex() {
+        this.tracks.forEach(track => track.beatIndex = 0);
     }
 
     generateOwnOutputFromIndex(output, startIndex) {
@@ -43,7 +48,9 @@ export default class TunedSequencerNode extends SoundNode {
 
         if (this.loop) {
             if (beatEnd >= this.sequenceLength) {
+                console.log( this.describe() + " loop completed" );
                 this.beat = 0;
+                this.resetTrackBeatIndex();
                 beatEnd = beatEnd - this.sequenceLength;
                 this.checkTracks(this.beat, beatEnd, startIndex * this.timePerSample);
             }
@@ -58,25 +65,28 @@ export default class TunedSequencerNode extends SoundNode {
     }
 
     checkTracks(beatStart, beatEnd, extraDelay) {
-        if (beatStart > beatEnd) {
-            var tmp = beatStart;
-            beatStart = beatEnd;
-            beatEnd = tmp;
-        } //if
+        if (beatStart > beatEnd) beatStart = beatEnd;
 
         this.tracks.forEach(track => {
-            track.beats.forEach(beatInfo => {
-                if (beatInfo.beat >= beatStart && beatInfo.beat < beatEnd) {
-                    var sample = this.getGrainNode(track);
-                    var delay = (beatInfo.beat - beatStart) * this.beatTime;
-                    sample.setPitch(beatInfo.pitch ? this.calcPitch(track, beatInfo.pitch) : 1.0);
-                    sample.setRate(beatInfo.rate ? beatInfo.rate : 1.0);
-                    sample.setVolume(beatInfo.volume ? beatInfo.volume : 1.0)
-                    this.addChild(sample, extraDelay + delay);
-                }
-            });
-        });
+            if (!track.beatIndex) track.beatIndex = 0;
 
+            if (track.beatIndex >= track.beats.length) return;
+
+            var beatInfo = track.beats[track.beatIndex];
+
+            if (beatInfo.start > beatStart) return;
+
+            if (beatInfo.start <= beatStart) {
+                 track.beatIndex++;
+
+                var sample = this.getGrainNode(track);
+                var delay = (beatInfo.start - beatStart) * this.beatTime;
+                sample.setPitch(this.calcPitch(track, beatInfo));
+                sample.setRate(beatInfo.rate ? beatInfo.rate : 1.0);
+                sample.setVolume(beatInfo.volume ? beatInfo.volume : 1.0)
+                this.addChild(sample, extraDelay + delay);
+            } //if
+        });
     }
 
     checkForFinishedChildren() {
@@ -104,13 +114,18 @@ export default class TunedSequencerNode extends SoundNode {
         return new GrainNode(track.soundBuffer.buffer, name);
     }
 
-    calcPitch(track, pitch) {
-        if (typeof(pitch) === "number") return pitch;
-
+    calcPitch(track, beatInfo) {
         var base = track.soundBuffer.primaryFrequency;
-        var target = this.notes.get(pitch);
-
-        return target / base;
+        var target = base;
+        var multiplier = beatInfo.pitchMultiplier ? beatInfo.pitchMultiplier : 1.0;
+        if (typeof(beatInfo.note) === "number") {
+            target = this.notes.get(this.notes.cMajor(beatInfo.note));
+        } else if (typeof(beatInfo.pitch === "number")) {
+            return beatInfo.pitch * multiplier;
+        } else {
+            target = this.notes.get(beatInfo.pitch);
+        }
+        return multiplier * target / base;
 
     }
 }

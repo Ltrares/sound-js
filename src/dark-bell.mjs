@@ -12,7 +12,7 @@ export default class DarkBell extends SoundNode {
         for ( var i = 0; i < 5; i++) {
             var cparms = [];
             for ( var j = 0; j < this.depth; j++ ) {
-                cparms.push( rand()*255)
+                cparms.push( rand.next()*255)
             } //for
             console.log( cparms );
             this.parameters.push(cparms);

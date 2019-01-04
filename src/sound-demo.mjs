@@ -3,7 +3,7 @@ import SoundBuffer from "./sound-buffer.mjs";
 import SequencerNode from "./sequencer-node.mjs";
 import TunedSequencerNode from "./tuned-sequencer-node.mjs";
 import WebkitPlayer from "./webkit-player.mjs";
-import Rhythm from "./rhythm.mjs";
+import SongGenerator from "./song-generator.mjs";
 
 export default class SoundDemo extends SoundNode {
     constructor(configFile) {
@@ -15,6 +15,13 @@ export default class SoundDemo extends SoundNode {
         this.ready = false;
         this.rhythm = {beatsPerMinute: 120, beatsPerMeasure: 4};
         this.audioRenderer = new WebkitPlayer(window.audioContext, this);
+        //var tmp = new Rhythm(1234);
+        // var nr = tmp.makeRoot(2);
+        // console.log( "rhythm", nr );
+        // var v1 = tmp.mix(nr,0.75,0.1);
+        // console.log( "v1", v1 );
+        // var v2 = tmp.mix(v1,0.25,0.1);
+        // console.log( "v2", v2 );
     };
 
     getCurrentOutput() {
@@ -61,9 +68,69 @@ export default class SoundDemo extends SoundNode {
             Object.keys(this.config.nodes).forEach(key => {
                 var nodeConfig = this.config.nodes[key];
 
-                this.addChild(this.createNodeFromConfig(key, nodeConfig));
+               // this.addChild(this.createNodeFromConfig(key, nodeConfig));
             });
         } //if
+
+        var tsn = new TunedSequencerNode( "RhythmTest-1" );
+        //tsn.sequenceLength = 16;
+        tsn.loop = true;
+        tsn.volume = 1.0;
+
+        var sound =  "s9";
+        var track = { sound: sound, beats: [] };
+
+        var songGenerator = new SongGenerator( 27 );
+
+        var motif = songGenerator.motif(8,4);
+        var vary1 = songGenerator.varyRhythm(motif,0.5,0.25);
+        vary1 = songGenerator.varyMelody(vary1,0.4);
+        vary1 = songGenerator.overlay(motif,vary1);
+
+        var verse1 = songGenerator.concat([motif,vary1]);
+        var verse2 = songGenerator.varyMelody(verse1,0.4);
+        verse2 = songGenerator.overlay(verse1,verse2);
+
+        // var vary2 = songGenerator.varyMelody(motif);
+        // vary2 = songGenerator.overlay(motif,vary2);
+        // //vary1 = songGenerator.overlay(motif,vary1);
+        // var vary3 = songGenerator.varyMelody(vary1);
+        // vary3 = songGenerator.varyMelody(vary3);
+        // vary3 = songGenerator.overlay(motif,vary3);
+        // //vary3 = songGenerator.overlay(vary2,vary3);
+        // var verse1 = songGenerator.concat([motif,vary1,vary2,vary3]);
+        //
+        // var verse2 = songGenerator.varyMelody(verse1);
+        // //verse2 = songGenerator.varyMelody(verse2);
+        var song = songGenerator.concat([verse1,verse2]);
+
+
+
+        track.beats = song;
+        tsn.sequenceLength = song.duration;
+
+
+        console.log( "track beats", track.beats );
+        // var tr =  new Rhythm(12345);
+        // var trr = tr.mix( [1,1,1,1,1,1,1,1,1,1,1,1], 0.75, 0.25 );
+        // trr = tr.mix(trr, 0.25, 0.5 );
+        // trr = trr.concat( tr.mix(trr,0.5,0.5));
+        //
+        // console.log( "rhythm test", trr );
+        // var cv = 0;
+        // for ( var tri in trr ) {
+        //     var trv = trr[tri];
+        //     cv += trv;
+        //     var pitch = tsn.notes.cMajor( Math.floor(Math.random()*17-8))
+        //     var beat = { beat: cv, pitch: pitch, volume: 0.7 };
+        //
+        //     track.beats.push(beat);
+        //     console.log( "beat", beat );
+        // } //
+        track.soundBuffer = this.soundBuffers[ sound ];
+        tsn.tracks = [ track ];
+
+        this.addChild(tsn);
 
         this.play();
     }

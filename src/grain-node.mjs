@@ -55,6 +55,7 @@ export default class GrainNode extends SoundNode {
 
         let grain = new Grain();
         grain.position = this.position;
+        grain.previousPosition = grain.position;
         grain.age = this.grainSize / 4.0;
         grain.size = this.grainSize;
         grain.index = 0;
@@ -64,6 +65,7 @@ export default class GrainNode extends SoundNode {
 
     resetGrain(grain) {
         grain.position = (this.position + this.grainSize * this.randomness * (Math.random() * 2.0 - 1.0));
+        grain.previousPosition = grain.position;
         grain.age = 0.0;
         grain.size = this.grainSize;
     }
@@ -75,6 +77,7 @@ export default class GrainNode extends SoundNode {
     nextGrainPosition(grain) {
         var direction = (this.effectiveRate > 0.0) ? 1 : -1;
         grain.age += this.msPerSample; // * this.rate;
+        grain.previousPosition = grain.position;
         grain.position += direction * this.msPerSample * this.effectivePitch;
     }
 
@@ -133,10 +136,14 @@ export default class GrainNode extends SoundNode {
                     var grain = this.grains[k];
                     if (grain.age >= grain.size) continue;
                     var windowValue = this.window(grain.age / grain.size);
-                    var pos = Math.trunc(grain.position / this.msPerSample);
-                    if (pos < audioData.length && pos >= 0) {
-                        output.add(j, index0, windowValue * audioData[pos] * this.effectiveVolume * scale);
-                    } //if
+
+                    var value = this.getGrainAudio(audioData,grain);
+
+                    if ( value ) output.add( j, index0, windowValue*this.effectiveVolume*scale*value);
+                    // var pos = Math.trunc(grain.position / this.msPerSample);
+                    // if (pos < audioData.length && pos >= 0) {
+                    //     output.add(j, index0, windowValue * audioData[pos] * this.effectiveVolume * scale);
+                    // } //if
                 } //for grain
             }  //for channel
 
@@ -161,4 +168,17 @@ export default class GrainNode extends SoundNode {
 
     } //processAudio
 
+    getGrainAudio(audioData, grain) {
+        var v0 = this.interpolateAudio( audioData, grain.position/this.msPerSample );
+        var v1 = this.interpolateAudio( audioData, grain.previousPosition/this.msPerSample );
+        return (v0+v1)/2.0;
+    }
+
+    interpolateAudio(audioData, position ) {
+        var pos = Math.trunc(position);
+        if ( pos < 0 || pos >= audioData.length ) return 0.0;
+        var offset = position - pos;
+        if ( offset <= 0.1 || pos == audioData.length - 1 ) return audioData[ pos ];
+        return audioData[pos]*(1-offset) + audioData[pos+1]*offset;
+    }
 }

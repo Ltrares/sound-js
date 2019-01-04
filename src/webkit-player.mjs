@@ -24,7 +24,7 @@ export default class WebkitPlayer {
         return this.context.decodeAudioData(buffer);
     }
 
-    pumpAudio() {
+    async pumpAudio() {
 
         var bufferTime = this.bufferSize / this.context.sampleRate;
 
@@ -57,12 +57,19 @@ export default class WebkitPlayer {
             // When a buffer is done playing, try to queue up
             // some more audio.
             bsn.onended = function (it) {
-                if ( this.currentOutput != null ) {
+                var t = new Date();
+                if (this.currentOutput != null) {
                     this.freeOutputBuffers.push(this.currentOutput.clear());
                 }
+
                 this.currentOutput = this.pendingOutput.shift();
                 it.currentTarget.disconnect();
-                this.pumpAudio();
+                var pa = this.pumpAudio();
+                var t3 = new Date() - t;
+
+                if (t3 > 50) {
+                    console.log("t3", t3);
+                }
             }.bind(this);
 
             bsn.start(this.playTime);

@@ -5,44 +5,62 @@ export default class Rhythm {
         this.rand = new SeedRand(seed);
     }
 
-    makeRoot(complexity) {
-        var root = [1,1,1,1];
+    makeBaseRhythm(size,beatSize) {
+        var base = [];
 
-        while ( complexity > 0 ) {
-            root = this.mix(root);
-            complexity --;
-        } //while
+        var onset = 0;
+        while ( base.length < size ) {
+            base.push( { start: onset, duration: beatSize});
+            onset += beatSize;
+        }
 
-        console.log( "root", root );
-        return root;
+        console.log( "base", base );
+        base.duration = size*beatSize;
+        return base;
     }
 
-    mix(base) {
-        var mixed = [];
+    mix(base,splitProbability, joinProbability) {
+        var split = [];
+        base.forEach( event =>{
+            var newEvent = JSON.parse(JSON.stringify(event));
+            if ( this.rand.next() > splitProbability  ) {
+                split.push(newEvent);
+                return;
+            } //
+            var splitEvent = JSON.parse(JSON.stringify(event));
 
-        var prev = 0;
-        //subdivide
-        for ( var i = 0; i < base.length; i++ ) {
-            if ( this.rand() < 0.5 || mixed.length == 0 ) {
-                mixed.push(base[i]);
-                continue;
+            newEvent.duration /= 2;
+
+            splitEvent.start = newEvent.start + newEvent.duration;
+            splitEvent.duration = newEvent.duration;
+            split.push(newEvent);
+            split.push(splitEvent);
+
+            console.log( "split", newEvent, splitEvent );
+
+        });
+
+        var join = [];
+
+        split.forEach( event =>{
+            var newEvent = JSON.parse(JSON.stringify(event));
+            if ( this.rand.next() > joinProbability  || join.length == 0 ) {
+                join.push(newEvent);
+                return;
             } //
 
-            mixed[ mixed.length-1] /= 2;
-            mixed.push[ mixed.length-1];
-        }
+            var oldEvent = join[ join.length - 1 ];
 
-        //combine
-        for ( var i = 0; i < base.length; i++ ) {
-            if ( this.rand() < 0.5 || mixed.length == 0 ) {
-                mixed.push(base[i]);
-                continue;
+            if ( oldEvent.duration < newEvent.duration ) {
+                if ( oldEvent.note && newEvent.note ) oldEvent.note = newEvent.note;
             } //
 
-            mixed[ mixed.length-1] += base[i];
-        }
+            oldEvent.duration += newEvent.duration;
+            console.log( "joined duration " + oldEvent.duration );
+        });
 
-        return mixed;
+        join.duration = base.duration;
+        return join;
 
     }
 

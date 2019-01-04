@@ -19,11 +19,11 @@ export default class Notes {
     }
 
     cMajor( num ) {
-        var tone = num % 7;
-        if ( tone < 0 ) tone += 7;
+        var tone = num % this.cMajorScale.length;
+        if ( tone < 0 ) tone += this.cMajorScale.length;
         var octave = 4;
-        octave += Math.trunc(num/7);
-        return this.cMajorScale(tone) + octave;
+        octave += Math.trunc(num/this.cMajorScale.length);
+        return this.cMajorScale[tone] + octave;
     }
 
     getPitchForNote(note) {
@@ -83,6 +83,7 @@ export default class Notes {
 
         return pitch;
     }
+
 
 
 

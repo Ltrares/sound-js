@@ -24,25 +24,11 @@ $(document).ready(function () {
     soundDemo.startLoading()
         .then(()=>window.demoLoaded=true);
 
-    window.requestAnimationFrame(step);
+    //window.requestAnimationFrame(step);
     P5 = new p5(drawing);
 
 
 });
-
-function step(timestamp) {
-    if (Math.random() < 0.025) {
-        //messages.push({age: Math.random() * 5, text: "" + timestamp + ": sound demo"})
-    }
-
-    var dt = (timestamp - lastTimestamp) / 1000.0;
-    lastTimestamp = timestamp;
-
-    //soundDemo.update(timestamp, dt);
-    //updateConsole(dt);
-    window.requestAnimationFrame(step);
-
-}
 
 let drawing = function (sketch) {
     sketch.preload = (arg) => {
