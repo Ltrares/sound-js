@@ -83,7 +83,7 @@ export default class TunedSequencerNode extends SoundNode {
                 var delay = (beatInfo.start - beatStart) * this.beatTime;
                 sample.setPitch(this.calcPitch(track, beatInfo));
                 sample.setRate(beatInfo.rate ? beatInfo.rate : 1.0);
-                sample.setVolume(beatInfo.volume ? beatInfo.volume : 1.0)
+                sample.setVolume(beatInfo.volume ? beatInfo.volume : 1.0);
                 this.addChild(sample, extraDelay + delay);
             } //if
         });
@@ -111,7 +111,7 @@ export default class TunedSequencerNode extends SoundNode {
             result.reset();
             return result;
         }
-        return new GrainNode(track.soundBuffer.buffer, name);
+        return new GrainNode(track.soundBuffer, name);
     }
 
     calcPitch(track, beatInfo) {

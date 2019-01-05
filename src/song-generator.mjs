@@ -10,15 +10,13 @@ export default class SongGenerator {
         this.notes = new Notes();
     }
 
-    motif(size,beatSize) {
-        var base = this.rhythm.makeBaseRhythm( size, beatSize ? beatSize : 1 );
+    motif(size, beatSize) {
+        var base = this.rhythm.makeBaseRhythm(size, beatSize ? beatSize : 1);
 
-        console.log( "base", base );
-        var motif = this.rhythm.mix(base, 0.5, 0.5 );
-        console.log( "mixed", motif );
+        var motif = this.rhythm.mix(base, 0.5, 0.5);
 
-        motif.forEach( event=>{
-            var noteNumber = Math.floor(this.rand.next() * 9 - 5 );
+        motif.forEach(event => {
+            var noteNumber = Math.floor(this.rand.next() * 13 - 11);
             event.note = noteNumber;
             event.volume = Math.min(1.0, 0.5 + 0.25 * event.duration / 2.0);
         });
@@ -27,14 +25,14 @@ export default class SongGenerator {
 
     }
 
-    varyRhythm(events,splitProbability,joinProbability) {
-        var result = this.rhythm.mix(events,splitProbability,joinProbability);
+    varyRhythm(events, splitProbability, joinProbability) {
+        var result = this.rhythm.mix(events, splitProbability, joinProbability);
         result.duration = events.duration;
         return result;
     }
 
 
-    varyMelody(events,probability) {
+    varyMelody(events, probability) {
         probability = probability ? probability : 0.4;
         var newEvents = [];
 
@@ -62,22 +60,23 @@ export default class SongGenerator {
                 if (rand > triggerLevel) {
                     newEvents.push(newEvent);
                     return;
-                };
+                }
+                ;
 
                 var r2 = this.rand.next();
 
-                var r3 = Math.sign( this.rand.next() - 0.5 );
+                var r3 = Math.sign(this.rand.next() - 0.5);
 
-                if ( r2 < 0.5 ) {
-                    newEvent.note += r3*2;
-                } else if ( r2 < 0.75 ) {
-                    newEvent.note += r3*4;
-                } else if ( r2 < 0.9 ) {
-                    newEvent.note += r3*3;
-                } else if ( r2 < 0.975 ) {
-                    newEvent.note += r3*7;
+                if (r2 < 0.5) {
+                    newEvent.note += r3 * 2;
+                } else if (r2 < 0.75) {
+                    newEvent.note += r3 * 4;
+                } else if (r2 < 0.9) {
+                    newEvent.note += r3 * 3;
+                } else if (r2 < 0.975) {
+                    newEvent.note += r3 * 7;
                 } else {
-                    newEvent.note += r3*1;
+                    newEvent.note += r3 * 1;
                 } //else
 
                 // if (r2 < 0.3) {

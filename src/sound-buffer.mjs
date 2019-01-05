@@ -11,18 +11,21 @@ export default class SoundBuffer {
         this.overallFrequencies = null;
         this.ready = false;
         this.binSize = 0;
+        this.averageSound = [];
+        this.fft = new SoundFft();
+        //this.avgMag = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
     };
 
     async analyzeAudio(buffer) {
         this.buffer = buffer;
         this.binSize = this.buffer.sampleRate / SoundConstants.FFT_SIZE;
         console.log("decoded audio", buffer);
+        var fftMagScale = SoundConstants.FFT_STEP_SIZE/(this.buffer.length*SoundConstants.FFT_SIZE);
         var promise = new Promise(resolve=>{
-            var fft = new SoundFft();
             var cp = 0;
-            var dataReal = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
-            var dataImag = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
-            var overall = fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+            var dataReal = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+            var dataImag = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+            var overall = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
             var channelData = this.buffer.getChannelData(0);
             while (cp < (this.buffer.length-SoundConstants.FFT_SIZE)) {
                 for (var i = 0; i < SoundConstants.FFT_SIZE; i++) {
@@ -30,7 +33,13 @@ export default class SoundBuffer {
                     dataReal[i] = cv;
                     dataImag[i] = 0;
                 } //
-                fft.transform(dataReal, dataImag);
+                this.fft.transform(dataReal, dataImag);
+
+                // for ( var i = 0; i < SoundConstants.FFT_SIZE; i++ ) {
+                //     var mag2 = dataReal[i]*dataReal[i] + dataImag[i]*dataImag[i];
+                //     this.avgMag[i] += Math.sqrt(mag2)*fftMagScale; //*Math.sign(dataImag[i]);
+                // } //
+
                 cp += SoundConstants.FFT_STEP_SIZE;
 
                 var cmags = [];
@@ -39,7 +48,7 @@ export default class SoundBuffer {
                     mag += isNaN(dataImag[i]) ? 0.0 : dataImag[i] * dataImag[i];
                     mag = Math.sqrt(mag);
                     cmags[i] = mag;
-                    overall[i] += mag;
+                    overall[i] += mag*fftMagScale;
                 } //for var i - total
 
                 var freqSort = this.topValues(cmags,10);
@@ -58,12 +67,13 @@ export default class SoundBuffer {
 
             } //while
 
-            var freqSort = this.topValues(overall,10);
+            var freqSort = this.topValues(overall,256);
 
             //console.log("frequency map", freqSort);
             this.overallFrequencies = freqSort;
             this.primaryFrequency = freqSort[0].frequency;
-            console.log("analyzed", this.name, this.url, this.primaryFrequency, freqSort );
+            this.averageSound = this.generateAverageSound();
+            console.log("analyzed", this );
             this.ready = true;
 
             resolve(this);
@@ -79,7 +89,34 @@ export default class SoundBuffer {
         }).sort((a, b) => {
             return a.value > b.value ? -1 : a.value < b.value ? 1 : 0;
         }).filter((a, i) => {
-            return (i < 10) ? a : null;
+            return (i < count) ? a : null;
         });
+    }
+
+    generateAverageSound() {
+        var zero = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+        var real = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
+
+        // this.averageSound = this.avgMag;
+        this.overallFrequencies.forEach( data =>{
+            var index = data.frequency/this.binSize;
+            real[index] = data.value;
+        });
+
+        this.fft.inverseTransform(real,zero);
+
+        var maxValue = Math.max.apply(null, real.map(Math.abs));
+        console.log( "max value", maxValue );
+
+        if ( maxValue > 0 ) real = real.map( value => value/maxValue);
+
+        return real;
+
+
+
+
+
+        //
+
     }
 };

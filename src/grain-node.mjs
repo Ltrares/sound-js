@@ -1,15 +1,15 @@
 import SoundNode from "./sound-node.mjs";
 import Grain from "./grain.mjs";
-//import SoundBuffer from "./sound-buffer.mjs";
 
 export default class GrainNode extends SoundNode {
-    constructor(audioBuffer, name) {
+    constructor(soundBuffer, name) {
         super("Grain Node", name);
         if (!GrainNode.window) GrainNode.window = [];
 
-        console.log("new grain node", this, audioBuffer);
-        this.audioBuffer = audioBuffer;
-        this.length = audioBuffer.length;
+        console.log("new grain node", this );
+        this.soundBuffer = soundBuffer;
+        this.audioBuffer = soundBuffer.buffer; //audioBuffer;
+        this.length = this.audioBuffer.length;
         this.grainInterval = 50;
         this.grainSize = 300;
         this.randomness = 0.001;
@@ -75,20 +75,20 @@ export default class GrainNode extends SoundNode {
     }
 
     nextGrainPosition(grain) {
-        var direction = (this.effectiveRate > 0.0) ? 1 : -1;
+        let direction = (this.effectiveRate > 0.0) ? 1 : -1;
         grain.age += this.msPerSample; // * this.rate;
         grain.previousPosition = grain.position;
         grain.position += direction * this.msPerSample * this.effectivePitch;
     }
 
-    window(value) {
-        var iValue = Math.trunc(value * 1000);
+    static window(value) {
+        let iValue = Math.trunc(value * 1000);
 
         if (GrainNode.window[iValue] === undefined) {
-            var result = Math.sin(Math.PI * value);
+            let result = Math.sin(Math.PI * value);
             result *= result;
-            // var result = 1.0;
-            // var cutoff = 200;
+            // let result = 1.0;
+            // let cutoff = 200;
             // if ( iValue < cutoff ) {
             //     result = iValue/cutoff;
             // } else if ( iValue > (1000-cutoff) ) {
@@ -101,17 +101,17 @@ export default class GrainNode extends SoundNode {
 
     generateOwnOutputFromIndex(output, startIndex) {
         //processAudioFromIndex(audioProcessingEvent, startIndex) {
-        //var outputBuffer = this.outputBuffer; //audioProcessingEvent.outputBuffer;
-        //    var outputBuffer = audioProcessingEvent.outputBuffer;
-        //    var inputBuffer = audioProcessingEvent.inputBuffer;
+        //let outputBuffer = this.outputBuffer; //audioProcessingEvent.outputBuffer;
+        //    let outputBuffer = audioProcessingEvent.outputBuffer;
+        //    let inputBuffer = audioProcessingEvent.inputBuffer;
 
         this.firstGrain();
 
-        for (var index0 = startIndex; index0 < output.length; index0++) {
+        for (let index0 = startIndex; index0 < output.length; index0++) {
             //if ( index0 < startIndex ) continue;
 
             if (this.timeSinceLastGrain >= this.grainInterval) {
-                var grain = null;
+                let grain = null;
                 if (this.freeGrains.length > 0) {
                     //console.log( "recycled a grain");
                     grain = this.freeGrains.pop();
@@ -124,23 +124,25 @@ export default class GrainNode extends SoundNode {
                 this.resetGrain(grain);
                 this.timeSinceLastGrain = 0.0;
             }
-            //var grain = null;
+            //let grain = null;
 
-            var scale = this.grainInterval / this.grainSize;
+            let scale = this.grainInterval / this.grainSize;
 
-            for (var j = 0; j < output.channelCount; j++) {
-                var audioData = this.audioBuffer.getChannelData(j % this.audioBuffer.numberOfChannels);
-                //var outputData = outputBuffer.getChannelData(j);
+            for (let j = 0; j < output.channelCount; j++) {
+                let audioData = this.audioBuffer.getChannelData(j % this.audioBuffer.numberOfChannels);
+
+
+                //let outputData = outputBuffer.getChannelData(j);
                 //outputData[index0] = inputBuffer.getChannelData(j)[index0];
-                for (var k = 0; k < this.grains.length; k++) {
-                    var grain = this.grains[k];
+                for (let k = 0; k < this.grains.length; k++) {
+                    let grain = this.grains[k];
                     if (grain.age >= grain.size) continue;
-                    var windowValue = this.window(grain.age / grain.size);
+                    let windowValue = GrainNode.window(grain.age / grain.size);
 
-                    var value = this.getGrainAudio(audioData,grain);
+                    let value = this.getGrainAudio(audioData,grain);
 
                     if ( value ) output.add( j, index0, windowValue*this.effectiveVolume*scale*value);
-                    // var pos = Math.trunc(grain.position / this.msPerSample);
+                    // let pos = Math.trunc(grain.position / this.msPerSample);
                     // if (pos < audioData.length && pos >= 0) {
                     //     output.add(j, index0, windowValue * audioData[pos] * this.effectiveVolume * scale);
                     // } //if
@@ -151,8 +153,8 @@ export default class GrainNode extends SoundNode {
 
             this.timeSinceLastGrain += this.msPerSample;
 
-            for (var j = 0; j < this.grains.length; j++) {
-                var grain = this.grains[j];
+            for (let j = 0; j < this.grains.length; j++) {
+                let grain = this.grains[j];
                 this.nextGrainPosition(grain);
                 if (grain.age >= grain.size) {
                     this.freeGrains.push(grain);
@@ -169,16 +171,23 @@ export default class GrainNode extends SoundNode {
     } //processAudio
 
     getGrainAudio(audioData, grain) {
-        var v0 = this.interpolateAudio( audioData, grain.position/this.msPerSample );
-        var v1 = this.interpolateAudio( audioData, grain.previousPosition/this.msPerSample );
+       //let pos = Math.trunc(grain.position/this.msPerSample) % SoundConstants.FFT_SIZE;
+       // return this.soundBuffer.averageSound[pos];
+
+        // let pos = Math.trunc(grain.position/this.msPerSample);
+        // if ( pos < 0 || pos >= audioData.length ) return 0.0;
+        // return audioData[pos];
+
+        let v0 = GrainNode.interpolateAudio( audioData, grain.position/this.msPerSample );
+        let v1 = GrainNode.interpolateAudio( audioData, grain.previousPosition/this.msPerSample );
         return (v0+v1)/2.0;
     }
 
-    interpolateAudio(audioData, position ) {
-        var pos = Math.trunc(position);
+    static interpolateAudio(audioData, position ) {
+        let pos = Math.trunc(position);
         if ( pos < 0 || pos >= audioData.length ) return 0.0;
-        var offset = position - pos;
-        if ( offset <= 0.1 || pos == audioData.length - 1 ) return audioData[ pos ];
+        let offset = position - pos;
+        if ( pos >= audioData.length - 1 ) return audioData[ pos ];
         return audioData[pos]*(1-offset) + audioData[pos+1]*offset;
     }
 }

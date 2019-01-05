@@ -11,8 +11,7 @@ export default class SoundFtt {
         var n = real.length;
         if (n != imag.length)
             throw "Mismatched lengths";
-        if (n == 0)
-            return;
+        if (n == 0) return;
         else if ((n & (n - 1)) == 0)  // Is power of 2
             this.transformRadix2(real, imag);
         else  // More complicated algorithm for arbitrary sizes

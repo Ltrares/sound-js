@@ -14,23 +14,26 @@ export default class WebkitPlayer {
         this.soundNode = soundNode;
         this.currentOutput = null;
         this.pendingOutput = [];
+        this.audioPump = null;
     }
 
     start() {
-        this.pumpAudio();
+        //this.audioPump = setInterval(this.pumpAudio.bind(this),this.bufferSize*this.soundNode.timePerSample*2.0 );
+        this.audioPump = setInterval(this.pumpAudio.bind(this),10 );
+        //this.pumpAudio();
     }
 
     async decodeAudio(buffer) {
         return this.context.decodeAudioData(buffer);
     }
 
-    async pumpAudio() {
+    pumpAudio() {
 
         var bufferTime = this.bufferSize / this.context.sampleRate;
 
         if (this.playTime - this.context.currentTime > 5 * bufferTime) return;
 
-        while (this.playTime - this.context.currentTime < 10 * bufferTime) {
+        if (this.playTime - this.context.currentTime < 10 * bufferTime) {
             //console.log("pump audio", this.playTime, this.context.currentTime );
             var outputBuffer = this.outputBuffers.shift();
             this.pendingOutput.push(outputBuffer);
@@ -57,19 +60,17 @@ export default class WebkitPlayer {
             // When a buffer is done playing, try to queue up
             // some more audio.
             bsn.onended = function (it) {
-                var t = new Date();
                 if (this.currentOutput != null) {
                     this.freeOutputBuffers.push(this.currentOutput.clear());
                 }
 
                 this.currentOutput = this.pendingOutput.shift();
                 it.currentTarget.disconnect();
-                var pa = this.pumpAudio();
-                var t3 = new Date() - t;
+                //this.pumpAudio();
 
-                if (t3 > 50) {
-                    console.log("t3", t3);
-                }
+                // if (t3 > 50) {
+                //     console.log("t3", t3);
+                // }
             }.bind(this);
 
             bsn.start(this.playTime);
@@ -82,7 +83,7 @@ export default class WebkitPlayer {
 
         } //while
 
-
+       //this.pumpAudio();
         //
         // if (this.playTime - this.context.currentTime > 3*bufferTime) {
         //     //console.log("no need to pump audio");

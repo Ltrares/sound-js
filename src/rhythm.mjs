@@ -14,7 +14,6 @@ export default class Rhythm {
             onset += beatSize;
         }
 
-        console.log( "base", base );
         base.duration = size*beatSize;
         return base;
     }
@@ -36,7 +35,6 @@ export default class Rhythm {
             split.push(newEvent);
             split.push(splitEvent);
 
-            console.log( "split", newEvent, splitEvent );
 
         });
 
@@ -56,7 +54,6 @@ export default class Rhythm {
             } //
 
             oldEvent.duration += newEvent.duration;
-            console.log( "joined duration " + oldEvent.duration );
         });
 
         join.duration = base.duration;

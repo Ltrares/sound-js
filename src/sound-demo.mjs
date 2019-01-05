@@ -4,6 +4,7 @@ import SequencerNode from "./sequencer-node.mjs";
 import TunedSequencerNode from "./tuned-sequencer-node.mjs";
 import WebkitPlayer from "./webkit-player.mjs";
 import SongGenerator from "./song-generator.mjs";
+import FftNode from "./fft-node.mjs";
 
 export default class SoundDemo extends SoundNode {
     constructor(configFile) {
@@ -76,11 +77,13 @@ export default class SoundDemo extends SoundNode {
         //tsn.sequenceLength = 16;
         tsn.loop = true;
         tsn.volume = 1.0;
+        //tsn.setPitch(0.5);
 
-        var sound =  "s9";
+        //var sound =  "s11";
+        var sound =  "s13";
         var track = { sound: sound, beats: [] };
 
-        var songGenerator = new SongGenerator( 27 );
+        var songGenerator = new SongGenerator( 193 );
 
         var motif = songGenerator.motif(8,4);
         var vary1 = songGenerator.varyRhythm(motif,0.5,0.25);
@@ -88,8 +91,19 @@ export default class SoundDemo extends SoundNode {
         vary1 = songGenerator.overlay(motif,vary1);
 
         var verse1 = songGenerator.concat([motif,vary1]);
+
         var verse2 = songGenerator.varyMelody(verse1,0.4);
         verse2 = songGenerator.overlay(verse1,verse2);
+
+        var vary2 = songGenerator.varyRhythm(vary1,0.5,0.25);
+        vary2 = songGenerator.varyMelody(vary2,0.6);
+        vary2 = songGenerator.overlay(vary1,vary2);
+        var verse3 = songGenerator.concat([vary1,vary2]);
+
+        var vary3 = songGenerator.varyRhythm(vary2,0.5,0.25);
+        vary3 = songGenerator.varyMelody(vary3,0.6);
+        vary3 = songGenerator.overlay(vary2,vary3);
+        var verse4 = songGenerator.concat([vary2,vary3]);
 
         // var vary2 = songGenerator.varyMelody(motif);
         // vary2 = songGenerator.overlay(motif,vary2);
@@ -102,7 +116,7 @@ export default class SoundDemo extends SoundNode {
         //
         // var verse2 = songGenerator.varyMelody(verse1);
         // //verse2 = songGenerator.varyMelody(verse2);
-        var song = songGenerator.concat([verse1,verse2]);
+        var song = songGenerator.concat([verse1,verse2,verse3,verse4]);
 
 
 
@@ -131,6 +145,10 @@ export default class SoundDemo extends SoundNode {
         tsn.tracks = [ track ];
 
         this.addChild(tsn);
+
+        //let fftNode = new FftNode("test fft node", 30 );
+
+        //this.addChild(fftNode);
 
         this.play();
     }
@@ -181,7 +199,7 @@ export default class SoundDemo extends SoundNode {
     };
 
     async fetchAudio(name, file) {
-        let promise = new Promise((resolve, reject) => {
+         let promise = new Promise((resolve) => {
             var audioRequest = new XMLHttpRequest();
             var url = "./sounds/" + file;
             audioRequest.open("GET", encodeURIComponent(url), true);
@@ -211,7 +229,7 @@ export default class SoundDemo extends SoundNode {
 
     play() {
         super.play(5);
-        this.audioRenderer.pumpAudio();
+        this.audioRenderer.start();
     }
 
     update(timeStamp, delta) {

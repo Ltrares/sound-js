@@ -1,22 +1,17 @@
 import SoundDemo from "./src/sound-demo.mjs";
 
-
+let jquery = window.$ ? window.$ : {};
+let webkitAudioContext = window.webkitAudioContext ? window.webkitAudioContext : {};
+let p5 = window.p5 ? window.p5 : {};
 let soundDemo;
 let P5;
-let counter = 0;
-let shader1;
-let images = [];
-let imagesIndex = 0;
 let font;
-let lastTimestamp = 0;
 let messages = [];
-let demoLoaded = false;
+let clock = 0;
 
-window.addMessage = (msg,duration,color)=>{
-    messages.push({age: duration, text: msg})
-};
+window.addMessage = (msg,duration)=> messages.push({age: duration, text: msg});
 
-$(document).ready(function () {
+jquery(document).ready(function () {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     window.audioContext = new AudioContext();
 
@@ -24,30 +19,28 @@ $(document).ready(function () {
     soundDemo.startLoading()
         .then(()=>window.demoLoaded=true);
 
-    //window.requestAnimationFrame(step);
     P5 = new p5(drawing);
-
+    clock = new Date();
 
 });
 
 let drawing = function (sketch) {
-    sketch.preload = (arg) => {
+    sketch.preload = function () {
         console.log("preload", sketch);
         font = sketch.loadFont("Roboto-Black.ttf");
-    };
 
-    sketch.setup = () => {
+    };
+    sketch.setup = function () {
         sketch.createCanvas(sketch.windowWidth, sketch.windowHeight);
         sketch.background(0);
         sketch.textFont(font);
     };
-
-    sketch.draw = () => {
-        var g = sketch;
-        var w = sketch.windowWidth;
-        var h = sketch.windowHeight;
-        var mx = w / 2;
-        var my = h / 2;
+    sketch.draw = function () {
+        let g = sketch;
+        let w = sketch.windowWidth;
+        let h = sketch.windowHeight;
+        let mx = w / 2;
+        let my = h / 2;
         g.fill(0, 17); //12);
         g.rect(0, 0, g.width, g.height);
         //g.fill(255);
@@ -63,7 +56,7 @@ let drawing = function (sketch) {
         g.textSize(128);
         g.textAlign(g.CENTER, g.CENTER);
         //if (soundDemo.checkLoading()) {
-        if ( soundDemo.isReady() ) {
+        if (soundDemo.isReady()) {
             g.text("ready", mx, my);
         } else {
             g.text("loading", mx, my);
@@ -73,51 +66,66 @@ let drawing = function (sketch) {
 
     };
 
-    sketch.windowResized = (arg) => {
+    // noinspection SpellCheckingInspection
+    sketch.windowResized = function (arg) {
         console.log("resize", sketch, arg);
         sketch.resizeCanvas(sketch.windowWidth, sketch.windowHeight);
         sketch.background(0);
     };
 
-    sketch.mousePressed = (evt) => {
+    sketch.mousePressed = function (evt) {
         console.log("mouse pressed", evt);
-    }
-
+    };
 };
 
 function drawSound(g) {
-    if ( !soundDemo.ready ) return;
+    if ( !soundDemo.ready ) { return; }
 
-    var channelCount = soundDemo.getOutputChannelCount();
+    let channelCount = soundDemo.getOutputChannelCount();
 
-    var angle = 2 * Math.PI / channelCount;
-    var offset = 0; //lastTimestamp*0.0001;
+    let angle = 2 * Math.PI / channelCount;
+    let offset = 0; //lastTimestamp*0.0001;
     //g.fill(g.color(204, 153, 0));
     g.stroke(g.color(0, 153, 204));
 
-    var w2 = g.windowWidth / 2;
-    var h2 = g.windowHeight / 2;
+    let w2 = g.windowWidth / 2;
+    let h2 = g.windowHeight / 2;
 
-    var dAng = angle/soundDemo.getOutputBufferSize();
+    let dAng = angle/soundDemo.getOutputBufferSize();
 
-    var outputBuffer = soundDemo.getCurrentOutput();
+    let outputBuffer = soundDemo.getCurrentOutput();
 
-    for (var ci = 0; ci < channelCount; ci++) {
+
+    //let radDeg = 360.0/2.0*Math.PI;
+    let v = g.millis();
+    //console.log(v);
+    v /= 1000.0;
+    //v *= 2.0*Math.PI/360.0;
+
+    let clockX = Math.cos(v);
+    let clockY = Math.sin(v);
+
+    g.stroke(255);
+    g.line(w2,h2,w2+clockX*100,h2+clockY*100);
+
+
+
+    for ( let ci = 0; ci < channelCount; ci++) {
         g.stroke(g.color((ci*128)%255, (153-ci*64)%255, (204-ci*32)%255));
-        //var values = soundDemo.output[ci];
-        for (var i = 0; i < soundDemo.getOutputBufferSize(); i+=4) {
-            var myAngle = offset + ci *(dAng + angle) + 2*i * dAng;
+        //let values = soundDemo.output[ci];
+        for (let i = 0; i < soundDemo.getOutputBufferSize(); i+=4) {
+            let myAngle = offset + ci *(dAng + angle) + 2*i * dAng;
 
 
-            var v = outputBuffer ? outputBuffer.get(ci,i) : 0.0;
-            //var v = soundDemo.output[ci][i];
+            let v = outputBuffer ? outputBuffer.get(ci,i) : 0.0;
+            //let v = soundDemo.output[ci][i];
             v *= 100;
             v += 200;
-            if ( i%4 == 0 ) {
-                var x = Math.cos(myAngle) * v;
-                var y = Math.sin(myAngle) * v;
+            //if ( i%4 == 0 ) {
+                let x = Math.cos(myAngle) * v;
+                let y = Math.sin(myAngle) * v;
                 g.point( w2 + x, h2 + y);
-            } //if
+            //} //if
         } //for
     } //for
 
@@ -125,12 +133,12 @@ function drawSound(g) {
 }
 
 function drawConsole(g) {
-    var height = 11;
+    let height = 11;
     g.textSize(height);
     g.textAlign(g.LEFT, g.CENTER);
     g.stroke(32);
     g.fill(255);
-    var spacing = 0.075;
+    let spacing = 0.075;
 
     messages.reduce((pos, msg) => {
         //console.log( pos, msg );

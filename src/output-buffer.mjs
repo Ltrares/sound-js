@@ -3,13 +3,14 @@ export default class OutputBuffer {
         this.data = [];
         this.length = size;
         this.channelCount = channels;
-        for (var i = 0; i < channels; i++) {
+        for (let i = 0; i < channels; i++) {
             this.data.push(new Array(size).fill(0));
         } //
     } //
 
+    // noinspection JSUnusedGlobalSymbols
     clear() {
-        for (var channel = 0; channel < this.channelCount; channel++) {
+        for (let channel = 0; channel < this.channelCount; channel++) {
             this.data[channel].fill(0);
         } //for
         return this;
@@ -18,9 +19,9 @@ export default class OutputBuffer {
     split(position) {
         if (position >= this.length) return null;
 
-        var newOutputBuffer = new OutputBuffer(this.length - position, this.channelCount);
+        let newOutputBuffer = new OutputBuffer(this.length - position, this.channelCount);
 
-        for (var i = 0; i < this.channelCount; i++) {
+        for (let i = 0; i < this.channelCount; i++) {
             newOutputBuffer.data[i] = this.data[i].slice(position);
             this.data[i] = this.data[i].slice(0, position);
         }
