@@ -1,4 +1,5 @@
 import SoundDemo from "./src/sound-demo.mjs";
+import OutputBuffer from "./src/output-buffer.mjs";
 
 let jquery = window.$ ? window.$ : {};
 let webkitAudioContext = window.webkitAudioContext ? window.webkitAudioContext : {};
@@ -8,8 +9,9 @@ let P5;
 let font;
 let messages = [];
 let clock = 0;
+let soundGraph;
 
-window.addMessage = (msg,duration)=> messages.push({age: duration, text: msg});
+window.addMessage = (msg, duration) => messages.push({age: duration, text: msg});
 
 jquery(document).ready(function () {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -17,7 +19,7 @@ jquery(document).ready(function () {
 
     soundDemo = new SoundDemo("./sound.config");
     soundDemo.startLoading()
-        .then(()=>window.demoLoaded=true);
+        .then(() => window.demoLoaded = true);
 
     P5 = new p5(drawing);
     clock = new Date();
@@ -79,7 +81,9 @@ let drawing = function (sketch) {
 };
 
 function drawSound(g) {
-    if ( !soundDemo.ready ) { return; }
+    if (!soundDemo.ready) {
+        return;
+    }
 
     let channelCount = soundDemo.getOutputChannelCount();
 
@@ -91,9 +95,13 @@ function drawSound(g) {
     let w2 = g.windowWidth / 2;
     let h2 = g.windowHeight / 2;
 
-    let dAng = angle/soundDemo.getOutputBufferSize();
+    let dAng = angle / soundDemo.getOutputBufferSize();
 
     let outputBuffer = soundDemo.getCurrentOutput();
+
+    if (!soundGraph && outputBuffer) {
+        soundGraph = new OutputBuffer(outputBuffer.length, outputBuffer.channelCount);
+    } //
 
 
     //let radDeg = 360.0/2.0*Math.PI;
@@ -106,25 +114,36 @@ function drawSound(g) {
     let clockY = Math.sin(v);
 
     g.stroke(255);
-    g.line(w2,h2,w2+clockX*100,h2+clockY*100);
+    g.line(w2, h2, w2 + clockX * 100, h2 + clockY * 100);
 
 
+    if ( soundGraph ) {
+        for (let ci = 0; ci < channelCount; ci++) {
+            //g.stroke(g.color((ci * 128) % 255, (153 - ci * 64) % 255, (204 - ci * 32) % 255));
+            //let values = soundDemo.output[ci];
+            for (let i = 0; i < soundDemo.getOutputBufferSize(); i += 2) {
+                let v = outputBuffer ? outputBuffer.get(ci, i) : 0.0;
+                soundGraph.avg(ci, i, v, 0.5);
+            } //for
+        } //
+    } //if
 
-    for ( let ci = 0; ci < channelCount; ci++) {
-        g.stroke(g.color((ci*128)%255, (153-ci*64)%255, (204-ci*32)%255));
+
+    for (let ci = 0; ci < channelCount; ci++) {
+        g.stroke(g.color((ci * 128) % 255, (153 - ci * 64) % 255, (204 - ci * 32) % 255));
         //let values = soundDemo.output[ci];
-        for (let i = 0; i < soundDemo.getOutputBufferSize(); i+=4) {
-            let myAngle = offset + ci *(dAng + angle) + 2*i * dAng;
+        for (let i = 0; i < soundDemo.bufferSize; i += 4) {
+            let myAngle = offset + ci * (dAng + angle) + 2 * i * dAng;
 
 
-            let v = outputBuffer ? outputBuffer.get(ci,i) : 0.0;
+            let v = soundGraph ? soundGraph.get(ci, i) : 0;
             //let v = soundDemo.output[ci][i];
             v *= 100;
             v += 200;
             //if ( i%4 == 0 ) {
-                let x = Math.cos(myAngle) * v;
-                let y = Math.sin(myAngle) * v;
-                g.point( w2 + x, h2 + y);
+            let x = Math.cos(myAngle) * v;
+            let y = Math.sin(myAngle) * v;
+            g.point(w2 + x, h2 + y);
             //} //if
         } //for
     } //for

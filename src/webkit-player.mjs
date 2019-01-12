@@ -19,6 +19,9 @@ export default class WebkitPlayer {
 
     start() {
         //this.audioPump = setInterval(this.pumpAudio.bind(this),this.bufferSize*this.soundNode.timePerSample*2.0 );
+        for ( let i = 0; i < 5; i++ ) {
+            this.pumpAudio();
+        } //for
         this.audioPump = setInterval(this.pumpAudio.bind(this),10 );
         //this.pumpAudio();
     }
@@ -78,7 +81,10 @@ export default class WebkitPlayer {
 
             //if (outputBuffer) this.freeOutputBuffers.push(outputBuffer.clear());
             outputBuffer = this.getOutputBuffer(this.bufferSize, this.channelCount);
+            var t0 = new Date();
             this.soundNode.updateAudio(outputBuffer);
+            var t1 = (new Date())-t0;
+            if ( t1 > 50 ) console.log( "t1", t1 );
             if (outputBuffer) this.outputBuffers.push(outputBuffer);
 
         } //while

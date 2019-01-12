@@ -77,15 +77,21 @@ export default class SoundDemo extends SoundNode {
         //tsn.sequenceLength = 16;
         tsn.loop = true;
         tsn.volume = 1.0;
+        tsn.setRate(2);
         //tsn.setPitch(0.5);
 
-        //var sound =  "s11";
         var sound =  "s13";
+        //var sound =  "s13";
+        //var sound = "s11"; //s8 //s11
         var track = { sound: sound, beats: [] };
 
-        var songGenerator = new SongGenerator( 193 );
+        var songGenerator = new SongGenerator( 28);
 
-        var motif = songGenerator.motif(8,4);
+        var motif = songGenerator.motif(16,4);
+        //var motif2 = songGenerator.motif(8,4);
+        //motif2 = songGenerator.varyRhythm(motif2,0.5,0.25);
+        //var motif = songGenerator.concat([motif1,motif2]);
+
         var vary1 = songGenerator.varyRhythm(motif,0.5,0.25);
         vary1 = songGenerator.varyMelody(vary1,0.4);
         vary1 = songGenerator.overlay(motif,vary1);
@@ -96,12 +102,12 @@ export default class SoundDemo extends SoundNode {
         verse2 = songGenerator.overlay(verse1,verse2);
 
         var vary2 = songGenerator.varyRhythm(vary1,0.5,0.25);
-        vary2 = songGenerator.varyMelody(vary2,0.6);
+        vary2 = songGenerator.varyMelody(vary2,0.4);
         vary2 = songGenerator.overlay(vary1,vary2);
         var verse3 = songGenerator.concat([vary1,vary2]);
 
         var vary3 = songGenerator.varyRhythm(vary2,0.5,0.25);
-        vary3 = songGenerator.varyMelody(vary3,0.6);
+        vary3 = songGenerator.varyMelody(vary3,0.4);
         vary3 = songGenerator.overlay(vary2,vary3);
         var verse4 = songGenerator.concat([vary2,vary3]);
 
@@ -228,7 +234,7 @@ export default class SoundDemo extends SoundNode {
     };
 
     play() {
-        super.play(5);
+        super.play(7);
         this.audioRenderer.start();
     }
 

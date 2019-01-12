@@ -16,20 +16,23 @@ export default class OutputBuffer {
         return this;
     }
 
-    split(position) {
-        if (position >= this.length) return null;
-
-        let newOutputBuffer = new OutputBuffer(this.length - position, this.channelCount);
-
-        for (let i = 0; i < this.channelCount; i++) {
-            newOutputBuffer.data[i] = this.data[i].slice(position);
-            this.data[i] = this.data[i].slice(0, position);
-        }
-
-        this.length = position;
-
-        return newOutputBuffer;
+    avg(channel,index,value,weight) {
+        this.data[channel][index] = (this.data[channel][index] + value*weight)/(1.0+weight);
     }
+    // split(position) {
+    //     if (position >= this.length) return null;
+    //
+    //     let newOutputBuffer = new OutputBuffer(this.length - position, this.channelCount);
+    //
+    //     for (let i = 0; i < this.channelCount; i++) {
+    //         newOutputBuffer.data[i] = this.data[i].slice(position);
+    //         this.data[i] = this.data[i].slice(0, position);
+    //     }
+    //
+    //     this.length = position;
+    //
+    //     return newOutputBuffer;
+    // }
 
     get(channel, index) {
         return this.data[channel][index];

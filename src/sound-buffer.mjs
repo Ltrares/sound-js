@@ -13,11 +13,22 @@ export default class SoundBuffer {
         this.binSize = 0;
         this.averageSound = [];
         this.fft = new SoundFft();
+        this.channelData = [];
         //this.avgMag = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
     };
 
+    // getAudio( channel, startPosition, endPosition ) {
+    //     return this.buffer.getChannelData(channel)[Math.trunc(startPosition)
+    // } //
+
+
     async analyzeAudio(buffer) {
         this.buffer = buffer;
+
+        for ( let ci = 0; ci < buffer.numberOfChannels; ci++ ) {
+            this.channelData.push( buffer.getChannelData(ci) );
+        } //for
+
         this.binSize = this.buffer.sampleRate / SoundConstants.FFT_SIZE;
         console.log("decoded audio", buffer);
         var fftMagScale = SoundConstants.FFT_STEP_SIZE/(this.buffer.length*SoundConstants.FFT_SIZE);

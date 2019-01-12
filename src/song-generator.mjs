@@ -13,7 +13,7 @@ export default class SongGenerator {
     motif(size, beatSize) {
         var base = this.rhythm.makeBaseRhythm(size, beatSize ? beatSize : 1);
 
-        var motif = this.rhythm.mix(base, 0.5, 0.5);
+        var motif = this.rhythm.mix(base, 0.6, 0.3);
 
         motif.forEach(event => {
             var noteNumber = Math.floor(this.rand.next() * 13 - 11);
@@ -36,69 +36,47 @@ export default class SongGenerator {
         probability = probability ? probability : 0.4;
         var newEvents = [];
 
-        var map = new Map();
-        events.forEach(event => {
-            var newEvent = JSON.parse(JSON.stringify(event));
 
-            var r = this.rand.next();
+        var ctime = 0;
+        var currentEvents = [];
 
-            var currentEvents = map.get(newEvent.start);
 
-            if (!currentEvents) {
-                currentEvents = [];
-                map.set(newEvent.start, currentEvents);
-            } //
-            currentEvents.push(newEvent);
-        });
 
-        map.forEach(currentEvents => {
-            var triggerLevel = probability / (currentEvents.length);
+        events.forEach(event=>{
+           let newEvent = JSON.parse(JSON.stringify(event));
 
-            currentEvents.forEach(newEvent => {
-                var rand = this.rand.next();
+           ctime = newEvent.start;
+           currentEvents = currentEvents.filter(cevt=>{
+              return (cevt.start + cevt.duration) < ctime;
+           });
 
-                if (rand > triggerLevel) {
-                    newEvents.push(newEvent);
-                    return;
-                }
-                ;
+           currentEvents.push(newEvent);
+           newEvents.push(newEvent);
+           let triggerLevel = probability / (currentEvents.length);
 
-                var r2 = this.rand.next();
+            var rand = this.rand.next();
 
-                var r3 = Math.sign(this.rand.next() - 0.5);
+            if (rand > triggerLevel) return;
 
-                if (r2 < 0.5) {
-                    newEvent.note += r3 * 2;
-                } else if (r2 < 0.75) {
-                    newEvent.note += r3 * 4;
-                } else if (r2 < 0.9) {
-                    newEvent.note += r3 * 3;
-                } else if (r2 < 0.975) {
-                    newEvent.note += r3 * 7;
-                } else {
-                    newEvent.note += r3 * 1;
-                } //else
+            console.log( "trigger", rand, triggerLevel, currentEvents );
 
-                // if (r2 < 0.3) {
-                //     newEvent.note += 2;
-                // } else if (r2 < 0.3) {
-                //     newEvent.note += 4;
-                // } else if (r2 < 0.5) {
-                //     newEvent.note += 3;
-                // } else if (r2 < 0.7) {
-                //     newEvent.note -= 4;
-                // } else if (r2 < 0.8 ) {
-                //     newEvent.note += 7;
-                // } else if ( r2 < 0.9 ) {
-                //     newEvent.note += 3;
-                // } else if ( r2 < 0.95 ) {
-                //     newEvent.note += 1;
-                // } else {
-                //     newEvent.note -= 1;
-                // }
+            var r2 = this.rand.next();
 
-                newEvents.push(newEvent);
-            });
+            var r3 = Math.sign(this.rand.next() - 0.5);
+
+            if (r2 < 0.5) {
+                newEvent.note += r3 * 2;
+            } else if (r2 < 0.75) {
+                newEvent.note += r3 * 4;
+            } else if (r2 < 0.9) {
+                newEvent.note += r3 * 3;
+            } else if (r2 < 0.975) {
+                newEvent.note += r3 * 7;
+            } else {
+                newEvent.note += r3 * 1;
+            } //else
+
+            if ( r3 < 0 && this.rand.next() < 0.5 ) newEvent.note -= 1;
         });
 
         newEvents.duration = events.duration;
@@ -110,7 +88,6 @@ export default class SongGenerator {
 
         var duration = 0;
         eventLists.forEach(eventList => {
-            console.log("concat", eventList);
             eventList.forEach(event => {
                 var newEvent = JSON.parse(JSON.stringify(event));
                 newEvent.start += duration;
@@ -119,6 +96,7 @@ export default class SongGenerator {
             duration += eventList.duration;
         });
 
+        console.log( "concat duration", duration );
         newEvents.duration = duration;
         return newEvents;
     }
@@ -130,13 +108,13 @@ export default class SongGenerator {
 
         events0.forEach(event => {
             var newEvent = JSON.parse(JSON.stringify(event));
-            newEvent.start = this.modBeatTime(event.start, events0.duration);
+            //newEvent.start = this.modBeatTime(event.start, events0.duration);
             newEvents.push(newEvent);
         });
 
         events1.forEach(event => {
             var newEvent = JSON.parse(JSON.stringify(event));
-            newEvent.start = this.modBeatTime(event.start, events1.duration);
+            //newEvent.start = this.modBeatTime(event.start, events1.duration);
             newEvents.push(newEvent);
         });
 
