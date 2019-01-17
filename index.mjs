@@ -1,5 +1,6 @@
 import SoundDemo from "./src/sound-demo.mjs";
 import OutputBuffer from "./src/output-buffer.mjs";
+import QuickMath from "./src/quick-math.mjs";
 
 let jquery = window.$ ? window.$ : {};
 let webkitAudioContext = window.webkitAudioContext ? window.webkitAudioContext : {};
@@ -10,6 +11,8 @@ let font;
 let messages = [];
 let clock = 0;
 let soundGraph;
+let nodeMap = {};
+let hidden, visibilityChange;
 
 window.addMessage = (msg, duration) => messages.push({age: duration, text: msg});
 
@@ -24,7 +27,36 @@ jquery(document).ready(function () {
     P5 = new p5(drawing);
     clock = new Date();
 
+    setUpVisibilityHandler();
+
 });
+
+function setUpVisibilityHandler() {
+
+
+    if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support
+        hidden = "hidden";
+        visibilityChange = "visibilitychange";
+    } else if (typeof document.msHidden !== "undefined") {
+        hidden = "msHidden";
+        visibilityChange = "msvisibilitychange";
+    } else if (typeof document.webkitHidden !== "undefined") {
+        hidden = "webkitHidden";
+        visibilityChange = "webkitvisibilitychange";
+    }
+    document.addEventListener(visibilityChange, handleVisibilityChange, false);
+
+}
+
+function handleVisibilityChange(event) {
+    console.log( "visibility change", event, hidden );
+    if (document[hidden]) {
+        soundDemo.pause();
+    } else {
+        soundDemo.resume();
+    }
+}
+
 
 let drawing = function (sketch) {
     sketch.preload = function () {
@@ -103,7 +135,6 @@ function drawSound(g) {
         soundGraph = new OutputBuffer(outputBuffer.length, outputBuffer.channelCount);
     } //
 
-
     //let radDeg = 360.0/2.0*Math.PI;
     let v = g.millis();
     //console.log(v);
@@ -128,7 +159,6 @@ function drawSound(g) {
         } //
     } //if
 
-
     for (let ci = 0; ci < channelCount; ci++) {
         g.stroke(g.color((ci * 128) % 255, (153 - ci * 64) % 255, (204 - ci * 32) % 255));
         //let values = soundDemo.output[ci];
@@ -141,12 +171,23 @@ function drawSound(g) {
             v *= 100;
             v += 200;
             //if ( i%4 == 0 ) {
-            let x = Math.cos(myAngle) * v;
-            let y = Math.sin(myAngle) * v;
+            let x = QuickMath.cos(myAngle) * v;
+            let y = QuickMath.sin(myAngle) * v;
             g.point(w2 + x, h2 + y);
             //} //if
         } //for
     } //for
+
+
+    soundDemo.children.forEach(node=>{
+
+        if ( !nodeMap[ node.id ] ) {
+            nodeMap[node.id ] = { scale: 0, x: 0, y: 0 };
+            console.log( "new node", node.describe() );
+        }
+
+
+    });
 
 
 }

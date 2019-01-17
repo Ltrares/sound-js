@@ -5,6 +5,8 @@ import TunedSequencerNode from "./tuned-sequencer-node.mjs";
 import WebkitPlayer from "./webkit-player.mjs";
 import SongGenerator from "./song-generator.mjs";
 import FftNode from "./fft-node.mjs";
+import DarkBell from "./dark-bell.mjs";
+import RandomBells from "./random-bells.mjs";
 
 export default class SoundDemo extends SoundNode {
     constructor(configFile) {
@@ -77,40 +79,47 @@ export default class SoundDemo extends SoundNode {
         //tsn.sequenceLength = 16;
         tsn.loop = true;
         tsn.volume = 1.0;
-        tsn.setRate(2);
+        //tsn.setRate(0.5);
         //tsn.setPitch(0.5);
 
-        var sound =  "s13";
+        var sound =  "s8"; //"s8";
         //var sound =  "s13";
-        //var sound = "s11"; //s8 //s11
+        //var sound = "s17";
+        var bassSound = "s14"; //"s13"; ////s8 //s11
         var track = { sound: sound, beats: [] };
+        var bassTrack = { sound: bassSound, beats: [] };
 
-        var songGenerator = new SongGenerator( 28);
+        var songGenerator = new SongGenerator( 133 );
 
         var motif = songGenerator.motif(16,4);
-        //var motif2 = songGenerator.motif(8,4);
-        //motif2 = songGenerator.varyRhythm(motif2,0.5,0.25);
-        //var motif = songGenerator.concat([motif1,motif2]);
+        var motif1 = songGenerator.varyMelody(motif,0.4);
+        var motif2 = songGenerator.varyMelody(motif1,0.4);
+        var motif3 = songGenerator.varyMelody(motif2,0.4);
 
-        var vary1 = songGenerator.varyRhythm(motif,0.5,0.25);
-        vary1 = songGenerator.varyMelody(vary1,0.4);
-        vary1 = songGenerator.overlay(motif,vary1);
-
-        var verse1 = songGenerator.concat([motif,vary1]);
-
-        var verse2 = songGenerator.varyMelody(verse1,0.4);
-        verse2 = songGenerator.overlay(verse1,verse2);
-
-        var vary2 = songGenerator.varyRhythm(vary1,0.5,0.25);
-        vary2 = songGenerator.varyMelody(vary2,0.4);
-        vary2 = songGenerator.overlay(vary1,vary2);
-        var verse3 = songGenerator.concat([vary1,vary2]);
-
-        var vary3 = songGenerator.varyRhythm(vary2,0.5,0.25);
-        vary3 = songGenerator.varyMelody(vary3,0.4);
-        vary3 = songGenerator.overlay(vary2,vary3);
-        var verse4 = songGenerator.concat([vary2,vary3]);
-
+        // //var vary1 = songGenerator.varyRhythm(motif,0.5,0.25);
+        var vary1 = songGenerator.varyMelody(motif1,0.4);
+        vary1 = songGenerator.varyRhythm(vary1,0.2,0.0);
+        vary1 = songGenerator.overlay(motif1,vary1);
+        var verse1 = songGenerator.concat([motif1,vary1]);
+        // var verse1 = songGenerator.concat([motif1,vary1]);
+        //
+        // //var verse2 = songGenerator.varyMelody(verse1,0.4);
+        // //verse2 = songGenerator.overlay(verse1,verse2);
+        //
+        // //var vary2 = songGenerator.varyRhythm(vary1,0.5,0.25);
+        var vary2 = songGenerator.varyMelody(motif2,0.5);
+        vary2 = songGenerator.varyRhythm(vary2,0.2,0.0);
+        vary2 = songGenerator.overlay(motif2,vary2);
+        var verse2 = songGenerator.concat([motif2,vary2]);
+        //
+        // //var vary3 = songGenerator.varyRhythm(vary2,0.5,0.25);
+        // var vary3 = songGenerator.varyMelody(motif3,0.6);
+        // vary3 = songGenerator.varyRhythm(vary2,0.2,0.0);
+        // vary3 = songGenerator.overlay(motif3,vary3);
+        // var verse4 = songGenerator.concat([motif3,vary3]);
+        //
+        //
+        // var verse5 = songGenerator.overlay([verse3,verse4]);
         // var vary2 = songGenerator.varyMelody(motif);
         // vary2 = songGenerator.overlay(motif,vary2);
         // //vary1 = songGenerator.overlay(motif,vary1);
@@ -122,10 +131,13 @@ export default class SoundDemo extends SoundNode {
         //
         // var verse2 = songGenerator.varyMelody(verse1);
         // //verse2 = songGenerator.varyMelody(verse2);
-        var song = songGenerator.concat([verse1,verse2,verse3,verse4]);
+        var song = songGenerator.concat([motif,verse1,verse2]);
 
+        bassTrack.beats = songGenerator.slowHarmony(song,16);
+        bassTrack.volume = 0.5;
+        //bassTrack.rate = 2.0;
 
-
+        //track.rate = 2.0;
         track.beats = song;
         tsn.sequenceLength = song.duration;
 
@@ -148,10 +160,11 @@ export default class SoundDemo extends SoundNode {
         //     console.log( "beat", beat );
         // } //
         track.soundBuffer = this.soundBuffers[ sound ];
-        tsn.tracks = [ track ];
+        bassTrack.soundBuffer = this.soundBuffers[ bassSound ];
+        tsn.tracks = [ track, bassTrack ];
 
-        this.addChild(tsn);
-
+        //this.addChild(tsn);
+        this.addChild(new RandomBells("random bells", 123));
         //let fftNode = new FftNode("test fft node", 30 );
 
         //this.addChild(fftNode);
@@ -234,7 +247,7 @@ export default class SoundDemo extends SoundNode {
     };
 
     play() {
-        super.play(7);
+        super.play(1.5);
         this.audioRenderer.start();
     }
 

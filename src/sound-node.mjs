@@ -2,6 +2,7 @@ import Notes from "./notes.mjs";
 
 export default class SoundNode {
     constructor(type, name ) {
+        this.id = this.guid();
         this.name = name;
         this.time = 0;
         this.children = [];
@@ -63,6 +64,12 @@ export default class SoundNode {
         if (!this.paused) demoNode.play(this.delay + (delay ? delay : 0));
     }
 
+    getNodes(list) {
+        list.push(this);
+        this.children.forEach(child=>child.getNodes(list));
+        return list;
+    }
+
     setParent(demoNode) {
         this.parent = demoNode;
         this.updateEffectiveRate();
@@ -92,10 +99,10 @@ export default class SoundNode {
     }
 
     resume() {
-        this.paused = false;
         $.each(this.children, (index, child) => {
             child.resume();
         });
+        this.paused = false;
     }
 
 
@@ -145,6 +152,8 @@ export default class SoundNode {
     updateAudio(output) {
         if ( !output ) return;
 
+        if ( this.paused ) return;
+
         this.children.forEach( child => {
             child.updateAudio(output);
         });
@@ -174,36 +183,7 @@ export default class SoundNode {
         } //channel
     }
 
-    // processAudio(audioProcessingEvent) {
-    //     var outputBuffer = audioProcessingEvent.outputBuffer;
-    //     // for (var ci = 0; ci < outputBuffer.numberOfChannels; ci++) {
-    //     //     for (var i = 0; i < this.bufferSize; i++) {
-    //     //         this.output[ci][i] = 0;
-    //     //     } //for
-    //     // }
-    //     var startIndex = this.canPlay();
-    //     if (startIndex < 0) return;
-    //
-    //     this.processAudioFromIndex(audioProcessingEvent, startIndex);
-    //
-    //     for (var ci = 0; ci < outputBuffer.numberOfChannels; ci++) {
-    //         var op = outputBuffer.getChannelData(ci).slice(0);
-    //
-    //         for (var i = 0; i < op.length; i++) {
-    //             this.setOutput(ci, i, op[i]);
-    //             if (this.parent !== this) this.parent.setOutput(ci, i, op[i]);
-    //         } //for
-    //
-    //     } //for
-    //
-    //     var dt = this.bufferSize * this.timePerSample;
-    //
-    //     this.time += dt;
-    //
-    //     this.reduceOutput(dt);
-    //
-    //     this.checkForFinishedChildren();
-    // }
+
 
     checkForFinishedChildren() {
         this.children = this.children.filter(child => {
@@ -269,5 +249,14 @@ export default class SoundNode {
         //window.addMessage(this.describe() + " is done", 5);
     } //
 
+    guid() {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000)
+                .toString(16)
+                .substring(1);
+        }
+        return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+    }
 
 }
+

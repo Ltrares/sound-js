@@ -12,7 +12,7 @@ export default class GrainNode extends SoundNode {
         this.length = this.audioBuffer.length;
         this.grainInterval = 50;
         this.grainSize = 300;
-        this.randomness = 0.01;
+        this.randomness = 0.001;
         this.msPerSample = 1000.0 / audioContext.sampleRate;
         this.grains = [];
         this.freeGrains = [];
@@ -20,12 +20,11 @@ export default class GrainNode extends SoundNode {
         this.timeSinceLastGrain = 0.0;
         this.currentFrame = new Array(this.channelCount).fill(0);
         this.zeroFrame = new Array(this.channelCount).fill(0);
-        //this.starting = true;
         this.reset();
 
         if (GrainNode.window.length <= 0) {
             for (var i = 0; i < 1000; i++) {
-                var result = Math.sin(Math.PI * Math.sin(i / 1000.0));
+                var result = Math.sin(Math.PI *i / 1000.0);
                 result *= result;
                 GrainNode.window[i] = result;
             }

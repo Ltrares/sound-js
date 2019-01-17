@@ -68,6 +68,9 @@ export default class TunedSequencerNode extends SoundNode {
         if (beatStart > beatEnd) beatStart = beatEnd;
 
         this.tracks.forEach(track => {
+            if (track.volume === undefined ) track.volume = 1.0;
+            if (track.rate === undefined ) track.rate = 1.0;
+
             if (!track.beatIndex) track.beatIndex = 0;
 
             if (track.beatIndex >= track.beats.length) return;
@@ -83,8 +86,8 @@ export default class TunedSequencerNode extends SoundNode {
                 var delay = (beatInfo.start - beatStart) * this.beatTime;
                 sample.setPitch(this.calcPitch(track, beatInfo));
                 //sample.setRate((beatInfo.rate ? beatInfo.rate : 1.0)); // * track.soundBuffer.buffer.duration / 4.0 );
-                sample.setRate(beatInfo.rate ? beatInfo.rate : 1.0);
-                sample.setVolume(beatInfo.volume ? beatInfo.volume : 1.0);
+                sample.setRate(track.rate*(beatInfo.rate ? beatInfo.rate : 1.0));
+                sample.setVolume(track.volume*(beatInfo.volume ? beatInfo.volume : 1.0));
                 this.addChild(sample, extraDelay + delay);
             } //if
         });

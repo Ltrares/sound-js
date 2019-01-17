@@ -14,6 +14,7 @@ export default class SoundBuffer {
         this.averageSound = [];
         this.fft = new SoundFft();
         this.channelData = [];
+        this.maxLevel = 0.0;
         //this.avgMag = this.fft.newArrayOfZeros(SoundConstants.FFT_SIZE);
     };
 
@@ -40,9 +41,12 @@ export default class SoundBuffer {
             var channelData = this.buffer.getChannelData(0);
             while (cp < (this.buffer.length-SoundConstants.FFT_SIZE)) {
                 for (var i = 0; i < SoundConstants.FFT_SIZE; i++) {
-                    var cv = i + cp < this.buffer.length ? channelData[i + cp] : 0;
+                    var cv = ((i + cp) < this.buffer.length) ? channelData[i + cp] : 0;
                     dataReal[i] = cv;
                     dataImag[i] = 0;
+                    if ( Math.abs(cv) > this.maxLevel ) {
+                        this.maxLevel = cv;
+                    } //
                 } //
                 this.fft.transform(dataReal, dataImag);
 

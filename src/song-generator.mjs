@@ -10,16 +10,51 @@ export default class SongGenerator {
         this.notes = new Notes();
     }
 
+    cantusFirmus(size, beatSize) {
+        var base = this.rhythm.makeBaseRhythm(size, beatSize ? beatSize : 1);
+
+        let first = this.rand.next() < 0.75 ? 0 : 7;
+        let last = this.rand.next() < 0.5 ? 0 : 7;
+        let penult = this.rand.next() < 0.75 ? last + 1 : last - 1;
+
+        let peak = null;
+
+        base[0].note = first;
+        base[base.length - 1].note = last;
+        base[base.length - 2].note = penult;
+
+        let previous = 0;
+        for (let ni = 1; ni < base.length - 2; ni++) {
+
+
+        }
+
+
+        //start and end on doh
+        base[0].note = 0;
+
+        base[base.length - 1].note = 0;
+        base[base.length - 2].note = this.rand.next() < 0.75 ? 1 : -1;
+        //
+
+    }
+
+
     motif(size, beatSize) {
         var base = this.rhythm.makeBaseRhythm(size, beatSize ? beatSize : 1);
 
-        var motif = this.rhythm.mix(base, 0.6, 0.3);
+        var motif = this.rhythm.mix(base, 0.2, 0.1);
 
-        motif.forEach(event => {
-            var noteNumber = Math.floor(this.rand.next() * 13 - 11);
-            event.note = noteNumber;
-            event.volume = Math.min(1.0, 0.5 + 0.25 * event.duration / 2.0);
-        });
+        let notes = [];
+        let prevNote = 0;
+        for (let ni = 0; ni < motif.length; ni++) {
+            let event = motif[ni];
+            prevNote = prevNote + this.nextConsonance(notes);
+            motif[ni].note = prevNote;
+            console.log( "next note in motif", motif[ni].note );
+            motif[ni].volume = Math.min(1.0, 0.5 + 0.25 * event.duration / 2.0);
+            notes.push(prevNote);
+        } //for
 
         return motif;
 
@@ -41,24 +76,21 @@ export default class SongGenerator {
         var currentEvents = [];
 
 
+        events.forEach(event => {
+            let newEvent = JSON.parse(JSON.stringify(event));
 
-        events.forEach(event=>{
-           let newEvent = JSON.parse(JSON.stringify(event));
+            ctime = newEvent.start;
+            currentEvents = currentEvents.filter(cevt => {
+                return (cevt.start + cevt.duration) < ctime;
+            });
 
-           ctime = newEvent.start;
-           currentEvents = currentEvents.filter(cevt=>{
-              return (cevt.start + cevt.duration) < ctime;
-           });
-
-           currentEvents.push(newEvent);
-           newEvents.push(newEvent);
-           let triggerLevel = probability / (currentEvents.length);
+            currentEvents.push(newEvent);
+            newEvents.push(newEvent);
+            let triggerLevel = probability / (currentEvents.length);
 
             var rand = this.rand.next();
 
             if (rand > triggerLevel) return;
-
-            console.log( "trigger", rand, triggerLevel, currentEvents );
 
             var r2 = this.rand.next();
 
@@ -69,14 +101,12 @@ export default class SongGenerator {
             } else if (r2 < 0.75) {
                 newEvent.note += r3 * 4;
             } else if (r2 < 0.9) {
-                newEvent.note += r3 * 3;
-            } else if (r2 < 0.975) {
-                newEvent.note += r3 * 7;
-            } else {
-                newEvent.note += r3 * 1;
+                newEvent.note += r3 * 5;
+            // } else {
+            //     newEvent.note += r3 * 3;
             } //else
 
-            if ( r3 < 0 && this.rand.next() < 0.5 ) newEvent.note -= 1;
+            if (r3 < 0 && this.rand.next() < 0.5) newEvent.note -= 1;
         });
 
         newEvents.duration = events.duration;
@@ -96,7 +126,7 @@ export default class SongGenerator {
             duration += eventList.duration;
         });
 
-        console.log( "concat duration", duration );
+        console.log("concat duration", duration);
         newEvents.duration = duration;
         return newEvents;
     }
@@ -138,10 +168,131 @@ export default class SongGenerator {
         return newEvents;
     }
 
-    modBeatTime(time, duration) {
-        var result = time;
-        while (result > duration) result -= duration;
-        return result;
+    nextConsonance(notes) {
+        let prevNote = notes.length > 0 ? notes[notes.length - 1] : null;
+        let prevPrevNote = notes.length > 1 ? notes[notes.length - 2] : null;
+        let prevPrevPrevNote = notes.length > 2 ? notes[notes.length - 3] : null;
+
+        if (prevNote === null) return 0;
+
+        let pi = null;
+        let ppi = null;
+        if (prevPrevNote !== null) {
+            pi = prevNote - prevPrevNote;
+        }
+        if (prevPrevPrevNote !== null ) {
+            ppi = prevPrevNote - prevPrevPrevNote;
+        }
+
+        //console.log( "consonance", pi, ppi );
+
+        if ( pi === null ) {
+            let result = this.getConsonance(prevNote,8,1);
+            return result;
+        } //
+
+        if ( ppi === null ) {
+            if ( Math.abs(pi) > 1 ) {
+                let result = this.getConsonance(prevNote,3,1);
+                return result;
+            } else {
+                let result = this.getConsonance(prevNote,5,1);
+                return result;
+            }
+        }
+
+        let size = 1;
+
+        if ( Math.abs(pi) > 1 && Math.abs(ppi) > 1 ) {
+            size = 1;
+        } else if ( Math.abs(pi) > 1 || Math.abs(ppi) > 1 ) {
+            size = 5;
+        } else {
+            size = 8;
+        }
+
+        let totalGap = Math.abs(pi + ppi);
+
+        let direction = 1;
+        if ( Math.abs(totalGap) > 5 ) {
+            direction = -Math.sign(totalGap);
+        } else if ( Math.abs(totalGap) > 2 ) {
+            direction = this.rand.next() < 0.75 ? -Math.sign(totalGap) : Math.sign(totalGap);
+        } else {
+            direction = this.rand.next() < 0.5 ? -1 : 1;
+        }
+
+        return this.getConsonance(prevNote,size,direction);
+    }
+
+    getConsonance(prevNote,size,direction) {
+        let result = this.rand.nextRange( 1, size );
+        if ( result === 7 ) {
+            if ( this.rand.next() < 0.5 ) {
+                result = 6;
+            } else {
+                result = 8;
+            }
+        } //if
+
+        return result*direction;
 
     }
+
+    slowHarmony(events,startTime) {
+        let newEvents = [];
+        let prevEvent = null;
+        let currentEvents = [];
+        let ctime = 0;
+
+        events.forEach(event=>{
+            if (newEvents.length > 0) prevEvent = newEvents[newEvents.length-1];
+
+            let newEvent = JSON.parse(JSON.stringify(event));
+            ctime = newEvent.start;
+
+            currentEvents = currentEvents.filter(cevt => {
+                return (cevt.start + cevt.duration) < ctime;
+            });
+
+            if ( startTime && (ctime < startTime) ) return;
+
+            currentEvents.push(newEvent);
+
+            if ( !prevEvent ) {
+                newEvents.push(newEvent);
+                return;
+            } //if
+
+            if ( this.isHarmonious( prevEvent, currentEvents) ) {
+                prevEvent.duration += newEvent.duration;
+                return;
+            } //
+
+            newEvents.push(newEvent);
+
+        });
+
+        newEvents.duration = events.duration;
+
+        return newEvents;
+
+
+    }
+
+    isHarmonious(event,events) {
+        if ( !events ) return true;
+
+        let harmony = true;
+        events.forEach( cevt =>{
+            if ( !harmony ) return;
+            let interval = Math.abs(Math.max(event.note,cevt.note) - Math.min(event.note,cevt.note)) % this.notes.cMajorScale.length;
+            if ( interval === 0 || interval === 2 || interval === 4 ) return;
+            harmony = false;
+        });
+
+        return harmony;
+
+    }
+
 }
