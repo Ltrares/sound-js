@@ -7,13 +7,24 @@ export default class SampleNode extends SoundNode {
         super("Sample Node", name);
         this.audioBuffer = audioBuffer;
         this.position = 0;
+        this.reset();
+    }
+
+    reset() {
+        this.updateEffectivePitch();
+        this.updateEffectiveVolume();
+        this.updateEffectiveRate();
+
+        if (this.effectiveRate < 0) {
+            this.position = this.audioBuffer.length * this.timePerSample;
+        } else {
+            this.position = 0;
+        }
+        this.done = false;
+
     }
 
     play(delay) {
-        if (this.effectiveRate < 0) {
-            this.position = this.audioBuffer.length * this.timePerSample;
-            console.log("position", this.position);
-        }
         super.play(delay);
     }
 
@@ -37,7 +48,6 @@ export default class SampleNode extends SoundNode {
             this.nextPosition();
 
             if (this.position >= this.audioBuffer.length * this.timePerSample || this.position < 0) {
-                console.log("sample node playback ended", this);
                 this.done = true;
                 break;
             } //if

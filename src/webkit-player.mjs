@@ -2,82 +2,93 @@ import OutputBuffer from "./output-buffer.mjs";
 
 export default class WebkitPlayer {
 
-    constructor(context) {
-        this.bufferSize = 2048;
-        this.channelCount = 2;
-        this.node = context.createScriptProcessor(this.bufferSize, this.channelCount, this.channelCount);
-        this.node.onaudioprocess = this.processAudio.bind(this);
+    constructor(context, soundNode) {
+        this.bufferSize = soundNode.bufferSize;
+        this.channelCount = soundNode.channelCount;
+        //this.node = context.createScriptProcessor(this.bufferSize, this.channelCount, this.channelCount);
+        //this.node.onaudioprocess = this.processAudio.bind(this);
         this.context = context;
         this.outputBuffers = [];
+        this.freeOutputBuffers = [];
+        this.playTime = context.currentTime;
+        this.soundNode = soundNode;
+        this.currentOutput = null;
+        this.pendingOutput = [];
+        this.audioPump = null;
 
     }
 
     start() {
-        this.node.connect(this.context.destination);
+        this.playTime = this.context.currentTime;
+        this.audioPump = setInterval(this.pumpAudio.bind(this), 10);
     }
 
-    processAudio(audioProcessingEvent) {
-        if ( this.outputBuffers.length <= 0 ) {
-            return;
+    async decodeAudio(buffer) {
+        return this.context.decodeAudioData(buffer);
+    }
+
+    /**
+     * thanks to http://blog.mecheye.net/2017/09/i-dont-know-who-the-web-audio-api-is-designed-for/
+     * for improvements in managing the flow of data into webkit audio
+     */
+    pumpAudio() {
+        var bufferTime = this.bufferSize / this.context.sampleRate;
+
+        if (this.playTime - this.context.currentTime > 5*bufferTime ) return;
+
+        var outputBuffer = this.outputBuffers.shift();
+
+        this.pendingOutput.push(outputBuffer);
+        const buffer = this.context.createBuffer(this.channelCount, this.bufferSize, this.context.sampleRate);
+        for (var channel = 0; channel < this.channelCount; channel++) {
+            const samples = buffer.getChannelData(channel);
+
+
+            var dt = 1 / this.context.sampleRate;
+            for (var i = 0; i < this.bufferSize; i++) {
+               if (outputBuffer) samples[i] = Math.tanh(outputBuffer.get(channel, i));
+            } //sample
+        } //channels
+
+        const bsn = this.context.createBufferSource();
+        bsn.buffer = buffer;
+        bsn.connect(this.context.destination);
+        bsn.onended = function (webkitNode) {
+            if (this.currentOutput != null) {
+                this.freeOutputBuffers.push(this.currentOutput.clear());
+            }
+
+            this.currentOutput = this.pendingOutput.shift();
+            webkitNode.currentTarget.disconnect();
+        }.bind(this);
+
+        if ( this.playTime < this.context.currentTime ) {
+            console.log( "playtime is in the past" );
+            this.playTime = this.context.currentTime;
+        }
+        bsn.start(this.playTime);
+        this.playTime += bufferTime;
+
+        outputBuffer = this.getFreeOutputBuffer(this.bufferSize, this.channelCount);
+        var t0 = new Date();
+        this.soundNode.updateAudio(outputBuffer);
+        var t1 = (new Date()) - t0;
+        if (t1 > 50) console.log("low performance/high demand - audio generation was slow", t1);
+        if (outputBuffer) {
+            this.outputBuffers.push(outputBuffer);
         }
 
-        var start = this.getAvailableOutputCount();
-
-        var audioBuffer = audioProcessingEvent.outputBuffer;
-
-        var remaining = this.bufferSize;
-
-        while ( this.outputBuffers.length > 0 && remaining > 0 ) {
-            var outputBuffer = this.outputBuffers.shift();
-
-            if ( remaining < outputBuffer.length ) {
-                console.log( "split", remaining );
-                var newOutputBuffer = outputBuffer.split(remaining);
-                this.outputBuffers.unshift(newOutputBuffer);
-            } //
-
-            this.writeOutputToAudioBuffer( this.bufferSize - remaining, outputBuffer, audioBuffer);
-            remaining -= outputBuffer.length;
-        } //while
 
 
     }
 
-    getAvailableOutputCount() {
-        return this.outputBuffers.reduce( (prev,cur)=>{
-            if ( cur && cur.length ) return prev + cur.length;
-            return prev;
-        }, 0);
-    }
+    getFreeOutputBuffer(bufferSize, channelCount) {
+        if (this.freeOutputBuffers.length <= 0) {
+            let op = new OutputBuffer(this.bufferSize, this.channelCount);
+            return op;
+        }
 
-    writeOutputToAudioBuffer(startIndex, outputBuffer, audioBuffer) {
-        for ( var channel = 0; channel < audioBuffer.numberOfChannels; channel ++ ) {
-            var audioData = audioBuffer.getChannelData(channel);
-
-            for ( var i = 0; i < outputBuffer.length; i++ ) {
-                audioData[startIndex +i] = outputBuffer.get(channel,i);
-            } //for
-        } //for
-    }
-
-    render(soundNode) {
-
-        var dataNeeded = 2*this.bufferSize - this.getAvailableOutputCount();
-
-        while ( dataNeeded > 0 ) {
-            var outputBuffer = new OutputBuffer(this.bufferSize,this.channelCount);
-            soundNode.updateAudio(outputBuffer);
-            this.outputBuffers.push(outputBuffer);
-            var dataNeeded = 2*this.bufferSize - this.getAvailableOutputCount();
-
-            //
-            // var total = outputBuffer.data[0].reduce( (prev, cur) =>{
-            //     return prev + Math.abs(cur);
-            // }, 0);
-
-
-        } //
-
-
+        let op = this.freeOutputBuffers.shift();
+        return op;
     }
 }

@@ -4,6 +4,7 @@ export default class Grain {
         this.age = 0;
         this.size = 0;
         this.index = -1;
+        this.previousPosition = 0;
     }
 
 }
